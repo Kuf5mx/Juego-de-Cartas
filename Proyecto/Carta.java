@@ -1,24 +1,20 @@
 /**
- * Representa una carta del juego (Pokémon o Poción).
+ * Representa una carta del juego (Pokemon o Pocion)
  */
 public class Carta {
 
-    private final String nombre;
+    private String nombre;
     private int vida;
-    private final int vidaMaxima;
-    private final int danio;
-    private final boolean esPocion;
+    private int vidaMaxima;
+    private int danio;
+    private boolean esPocion;
 
-    /**
-     * Crea una carta de tipo Pokémon.
-     */
+    // Constructor para Pokemon
     public Carta(String nombre, int vida, int danio) {
         this(nombre, vida, danio, false);
     }
 
-    /**
-     * Crea una carta Pokémon o una Poción.
-     */
+    // Constructor general
     public Carta(String nombre, int vida, int danio, boolean esPocion) {
         this.nombre = nombre;
         this.vida = Math.max(0, vida);
@@ -43,14 +39,8 @@ public class Carta {
         return esPocion;
     }
 
-    /**
-     * Resta vida a la carta si es un Pokémon.
-     */
     public void recibirDanio(int cantidad) {
-        if (esPocion || cantidad <= 0) {
-            return; // Las pociones no reciben daño y no se acepta daño negativo.
-        }
-
+        if (esPocion || cantidad <= 0) return;
         vida = Math.max(0, vida - cantidad);
     }
 
@@ -58,14 +48,8 @@ public class Carta {
         return !esPocion && vida <= 0;
     }
 
-    /**
-     * Recupera vida sin exceder el máximo inicial.
-     */
     public void curar(int cantidad) {
-        if (esPocion || cantidad <= 0 || estaFueraDeCombate()) {
-            return; // No cura pociones, cantidades negativas o cartas debilitadas.
-        }
-
+        if (esPocion || cantidad <= 0 || estaFueraDeCombate()) return;
         vida = Math.min(vidaMaxima, vida + cantidad);
     }
 
