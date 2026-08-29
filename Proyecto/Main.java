@@ -5,16 +5,16 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Prueba principal de todas las estructuras.
+ * Prueba principal de todas las estructuras
  */
 public class Main {
 
     public static void main(String[] args) {
-        // Scanner para leer las opciones.
+        // Scanner para leer la consola y random para aleatorios
         Scanner scanner = new Scanner(System.in);
         Random random = new Random();
 
-        // Catalogo simple.
+        // Creamos y mostramos el catalogo base
         ListaSimple catalogo = new ListaSimple();
         catalogo.agregar(new Carta("Bulbasaur", 60, 20));
         catalogo.agregar(new Carta("Charmander", 60, 20));
@@ -23,7 +23,7 @@ public class Main {
         System.out.println("=== Catalogo de cartas ===");
         catalogo.mostrar();
 
-        // Campos de la partida.
+        // Creamos la lista circular con los campos de batalla desordenados
         List<String> camposPosibles = new ArrayList<>();
         camposPosibles.add("Pasto");
         camposPosibles.add("Fuego");
@@ -36,44 +36,45 @@ public class Main {
             campos.agregar(campo);
         }
 
-        // Mazos de cada jugador.
+        // Creamos y llenamos el mazo inicial del jugador 1
         Pila mazo1 = new Pila(20);
         cargarMazoAleatorio(mazo1, new Carta[] {
-            new Carta("Bulbasaur", 60, 20),
-            new Carta("Ivysaur", 80, 30),
-            new Carta("Venusaur", 100, 40),
-            new Carta("Pikachu", 50, 20),
-            new Carta("Raichu", 80, 30),
-            new Carta("Pidgey", 40, 10),
-            new Carta("Clefairy", 50, 10),
-            new Carta("Oddish", 50, 15),
-            new Carta("Poliwag", 50, 15),
-            new Carta("Eevee", 60, 20)
+                new Carta("Bulbasaur", 60, 20),
+                new Carta("Ivysaur", 80, 30),
+                new Carta("Venusaur", 100, 40),
+                new Carta("Pikachu", 50, 20),
+                new Carta("Raichu", 80, 30),
+                new Carta("Pidgey", 40, 10),
+                new Carta("Clefairy", 50, 10),
+                new Carta("Oddish", 50, 15),
+                new Carta("Poliwag", 50, 15),
+                new Carta("Eevee", 60, 20)
         });
 
+        // Creamos y llenamos el mazo inicial del jugador 2
         Pila mazo2 = new Pila(20);
         cargarMazoAleatorio(mazo2, new Carta[] {
-            new Carta("Charmander", 60, 20),
-            new Carta("Charmeleon", 80, 30),
-            new Carta("Charizard", 110, 40),
-            new Carta("Squirtle", 60, 20),
-            new Carta("Wartortle", 80, 30),
-            new Carta("Magmar", 70, 30),
-            new Carta("Gyarados", 100, 40),
-            new Carta("Psyduck", 50, 15),
-            new Carta("Vulpix", 50, 15),
-            new Carta("Magikarp", 30, 5)
+                new Carta("Charmander", 60, 20),
+                new Carta("Charmeleon", 80, 30),
+                new Carta("Charizard", 110, 40),
+                new Carta("Squirtle", 60, 20),
+                new Carta("Wartortle", 80, 30),
+                new Carta("Magmar", 70, 30),
+                new Carta("Gyarados", 100, 40),
+                new Carta("Psyduck", 50, 15),
+                new Carta("Vulpix", 50, 15),
+                new Carta("Magikarp", 30, 5)
         });
 
-        // Creamos a los jugadores.
+        // Creamos las instancias de los dos jugadores
         Jugador jugador1 = new Jugador("Joseph", mazo1);
         Jugador jugador2 = new Jugador("Cepi", mazo2);
 
-        // Antes de jugar, cada quien revisa su mazo y puede agregar/quitar cartas.
+        // Permitimos que ambos editen sus mazos antes de iniciar
         editarMazo(scanner, jugador1.getNombre(), mazo1);
         editarMazo(scanner, jugador2.getNombre(), mazo2);
 
-        // Cola de turnos.
+        // Preparamos la cola de turnos con orden aleatorio
         Cola turnos = new Cola(2);
         if (random.nextBoolean()) {
             turnos.encolar(jugador1);
@@ -85,7 +86,7 @@ public class Main {
             System.out.println("Inicia el combate: " + jugador2.getNombre());
         }
 
-        // Mostramos la mano inicial.
+        // Llenamos y mostramos la mano inicial
         System.out.println("\n=== Mano de Joseph ===");
         jugador1.llenarMano();
         jugador1.mostrarMano();
@@ -94,6 +95,7 @@ public class Main {
         jugador2.llenarMano();
         jugador2.mostrarMano();
 
+        // Sacamos las cartas del mazo para el tablero
         jugador1.prepararCampoInicial();
         jugador2.prepararCampoInicial();
 
@@ -103,12 +105,12 @@ public class Main {
         System.out.println("\n=== Campo inicial de Cepi ===");
         jugador2.mostrarCampo();
 
-        // Arranca la simulacion.
         System.out.println("\n=== Simulacion de partida ===");
         int turno = 1;
 
-        // Bucle principal del juego.
+        // Bucle principal de la batalla (maximo 12 turnos)
         while (turno <= 12) {
+            // Sacamos al jugador del turno actual y al rival
             Jugador actual = turnos.desencolar();
             Jugador rival = turnos.desencolar();
 
@@ -119,14 +121,12 @@ public class Main {
             System.out.println("\nTurno " + turno + " de " + actual.getNombre());
             System.out.println("Campo: " + campos.obtenerActual());
 
-            // Cada turno roba una carta si hay espacio.
+            // Fases iniciales del turno: robar y llenar mano
             actual.robarCartaAMano();
-
-            // Cada turno se rellena la mano.
             actual.llenarMano();
             actual.mostrarMano();
 
-            // Se elige el pokemon activo, mostrando que hay en cada banca.
+            // Menu para cambiar de pokemon activo con la banca
             System.out.println("Pokemon activo de " + actual.getNombre() + ": " + actual.getActivo());
             System.out.println("1. Mantener activo");
             for (int i = 0; i < 3; i++) {
@@ -142,11 +142,11 @@ public class Main {
                 }
             }
 
+            // Opcion para usar o descartar cartas de la mano
             System.out.println("Elige una carta de tu mano");
             System.out.println("1. Carta 1");
             System.out.println("2. Carta 2");
             System.out.println("3. No jugar carta");
-            // Se elige una carta de la mano.
             int opcionMano = leerEntero(scanner, "Que carta quieres usar: ");
 
             if (opcionMano == 1 || opcionMano == 2) {
@@ -156,7 +156,7 @@ public class Main {
                 if (cartaElegida == null) {
                     System.out.println("Ahi no tienes carta.");
                 } else if (cartaElegida.esPocion()) {
-                    // Las pociones siempre curan al activo y se descartan solas.
+                    // Si es pocion cura al activo
                     if (actual.getActivo() == null) {
                         System.out.println("No tienes un pokemon activo para curar.");
                     } else {
@@ -165,7 +165,7 @@ public class Main {
                                 + actual.getActivo().getNombre() + " tiene " + actual.getActivo().getVida() + " de vida");
                     }
                 } else {
-                    // Solo se muestran los destinos que en verdad estan libres.
+                    // Si es pokemon se ubica en campo o banca
                     List<Integer> destinosValidos = new ArrayList<>();
                     System.out.println("Elige donde poner la carta:");
                     if (actual.getActivo() == null) {
@@ -204,24 +204,25 @@ public class Main {
                 System.out.println(actual.getNombre() + " no jugo carta");
             }
 
-            // Si no hay activo, se busca uno.
+            // Si el activo murio o no hay, promueve uno nuevo
             if (actual.getActivo() == null) {
                 actual.promoverSiguientePokemon();
             }
 
+            // Si no hay mas pokemon en campo la partida se detiene
             if (actual.getActivo() == null || rival.getActivo() == null) {
                 System.out.println("Falta un pokemon activo para seguir");
                 break;
             }
 
+            // Calculo y ejecucion del ataque
             int danio = calcularDanio(actual, rival, campos.obtenerActual());
             System.out.println(actual.getNombre() + " ataca con " + actual.getActivo().getNombre()
                     + " y hace " + danio + " de dano");
 
-                // El rival recibe dano.
             rival.recibirDanio(danio);
 
-                // Si cae, se suma un punto.
+            // Verificamos si el activo rival cayo
             if (rival.activoFueraDeCombate()) {
                 Carta caido = rival.sacarActivo();
                 actual.sumarPunto();
@@ -231,13 +232,13 @@ public class Main {
                 rival.promoverSiguientePokemon();
             }
 
+            // Rotamos el campo cada 2 turnos
             if (turno % 2 == 0) {
-                // Cada dos turnos cambia el campo.
                 campos.siguienteCampo();
                 System.out.println("Cambio de campo a: " + campos.obtenerActual());
             }
 
-            // Gana el primero en llegar a 3 puntos.
+            // Condiciones de victoria
             if (actual.getPuntos() >= 3) {
                 System.out.println("\n" + actual.getNombre() + " gano la partida con 3 puntos");
                 break;
@@ -248,11 +249,13 @@ public class Main {
                 break;
             }
 
-            turnos.encolar(rival);
+            // Regresamos ambos jugadores a la cola en orden
             turnos.encolar(actual);
+            turnos.encolar(rival);
             turno++;
         }
 
+        // Mostramos el estado final del descarte
         System.out.println("\n=== Descarte de Joseph ===");
         jugador1.mostrarDescarte();
 
@@ -262,7 +265,7 @@ public class Main {
         scanner.close();
     }
 
-    // Deja ver el mazo y agregar pociones o quitar cartas antes de jugar.
+    // Permite modificar el mazo agregando o quitando cartas
     private static void editarMazo(Scanner scanner, String nombreJugador, Pila mazo) {
         System.out.println("\n=== Editar mazo de " + nombreJugador + " ===");
         boolean editando = true;
@@ -291,12 +294,12 @@ public class Main {
         }
     }
 
+    // Lee un entero de la consola capturando errores de texto
     private static int leerEntero(Scanner scanner, String mensaje) {
         while (true) {
             System.out.print(mensaje);
             String entrada = scanner.nextLine();
 
-            // Validamos que si sea numero.
             try {
                 return Integer.parseInt(entrada.trim());
             } catch (NumberFormatException e) {
@@ -305,7 +308,7 @@ public class Main {
         }
     }
 
-    // Calcula el dano total.
+    // Calcula el dano total combinando tipo bonos de banca y campo
     private static int calcularDanio(Jugador atacante, Jugador defensor, String campoActual) {
         Carta cartaAtacante = atacante.getActivo();
         Carta cartaDefensora = defensor.getActivo();
@@ -333,7 +336,7 @@ public class Main {
         return danio;
     }
 
-    // Bonus por la banca rival.
+    // Calcula el bono si el atacante tiene ventaja sobre cartas de la banca rival
     private static int bonoPorBanca(String tipoAtacante, Jugador defensor) {
         int bono = 0;
 
@@ -347,7 +350,7 @@ public class Main {
         return bono;
     }
 
-    // Bonus o castigo segun el campo.
+    // Calcula bonos o penalizaciones segun el campo activo
     private static int bonoPorCampo(String tipoAtacante, String campoActual) {
         if (campoActual == null) {
             return 0;
@@ -392,7 +395,7 @@ public class Main {
         return 0;
     }
 
-    // Revisa si un tipo tiene ventaja sobre otro.
+    // Evalua si un tipo de pokemon le gana a otro
     private static boolean tieneVentaja(String tipoAtacante, String tipoDefensor) {
         if (tipoAtacante.equals("Planta") && tipoDefensor.equals("Agua")) {
             return true;
@@ -417,7 +420,7 @@ public class Main {
         return false;
     }
 
-    // Saca el tipo solo por el nombre.
+    // Asigna el tipo elemental buscando por el nombre de la carta
     private static String tipoDe(String nombre) {
         if (nombre.equals("Bulbasaur") || nombre.equals("Ivysaur") || nombre.equals("Venusaur")) {
             return "Planta";
@@ -440,7 +443,7 @@ public class Main {
         return "Normal";
     }
 
-    // Mete las cartas en el mazo en orden aleatorio.
+    // Mezcla las cartas recibidas y las apila en el mazo
     private static void cargarMazoAleatorio(Pila mazo, Carta[] cartas) {
         List<Carta> cartasAleatorias = new ArrayList<>();
 

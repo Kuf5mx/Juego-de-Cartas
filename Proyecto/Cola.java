@@ -1,67 +1,59 @@
 /**
- * Cola simple para el orden de turnos.
+ * Cola circular eficiente para el orden de turnos
  */
 public class Cola {
 
-    // Arreglo para guardar jugadores.
     private Jugador[] elementos;
-    // Inicio de la cola.
     private int frente;
-    // Posicion final de la cola.
     private int finalCola;
-    // Tamano maximo de la cola.
     private int capacidad;
+    private int tamano;
 
     /**
-     * Crea la cola con capacidad fija.
+     * Crea la cola con capacidad fija
      */
     public Cola(int capacidad) {
         this.capacidad = capacidad;
         this.elementos = new Jugador[capacidad];
         this.frente = 0;
         this.finalCola = 0;
+        this.tamano = 0;
     }
 
-    // Revisa si la cola esta vacia.
     public boolean estaVacia() {
-        return frente == finalCola;
+        return tamano == 0;
     }
 
-    // Revisa si la cola ya se lleno.
     public boolean estaLlena() {
-        return finalCola == capacidad;
+        return tamano == capacidad;
     }
 
     /**
-     * Agrega un jugador al final de la cola.
+     * Agrega un jugador al final de la cola en O(1)
      */
     public void encolar(Jugador jugador) {
         if (estaLlena()) {
-            System.out.println("La cola de turnos está llena");
+            System.out.println("La cola de turnos esta llena");
             return;
         }
 
         elementos[finalCola] = jugador;
-        finalCola++;
+        finalCola = (finalCola + 1) % capacidad;
+        tamano++;
     }
 
     /**
-     * Saca al jugador que va primero.
+     * Saca al primer jugador en O(1) sin recorrer el arreglo
      */
     public Jugador desencolar() {
         if (estaVacia()) {
             return null;
         }
 
-        // Sacamos al primero y recorremos los demas.
         Jugador jugador = elementos[frente];
-
-        for (int i = frente; i < finalCola - 1; i++) {
-            elementos[i] = elementos[i + 1];
-        }
-
-        finalCola--;
-        elementos[finalCola] = null;
+        elementos[frente] = null;
+        frente = (frente + 1) % capacidad;
+        tamano--;
         return jugador;
     }
 }
