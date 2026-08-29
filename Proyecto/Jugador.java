@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 /**
  * Representa a un jugador con mano dinamica y tablero
@@ -65,6 +66,81 @@ public class Jugador {
             }
         }
         return false;
+    }
+
+    public void robarCartasIniciales(int cantidad) {
+        int pokemonesEnMano = 0;
+        for (int i = 0; i < cantidad; i++) {
+            if (!robarCartaAMano()) break;
+            if (!mano.get(mano.size() - 1).esPocion()) pokemonesEnMano++;
+        }
+        while (pokemonesEnMano < 2 && robarCartaAMano()) {
+            if (!mano.get(mano.size() - 1).esPocion()) pokemonesEnMano++;
+        }
+    }
+
+    public void elegirCampoInicial(Scanner scanner) {
+        System.out.println("\n" + nombre + ", elige tu Pokemon activo y uno para la banca.");
+        mostrarMano();
+
+        while (activo == null) {
+            int opcion = leerOpcionMano(scanner, "Numero del Pokemon activo: ");
+            Carta elegido = obtenerCartaDeMano(opcion - 1);
+            if (elegido != null && !elegido.esPocion()) {
+                activo = sacarCartaDeMano(opcion - 1);
+            } else {
+                System.out.println("Debes elegir un Pokemon.");
+            }
+        }
+
+        while (true) {
+            int opcion = leerOpcionMano(scanner, "Numero del Pokemon para la banca (0 para dejarla vacia): ");
+            if (opcion == 0) return;
+            Carta elegido = obtenerCartaDeMano(opcion - 1);
+            if (elegido != null && !elegido.esPocion()) {
+                banca[0] = sacarCartaDeMano(opcion - 1);
+                return;
+            }
+            System.out.println("Debes elegir un Pokemon.");
+        }
+    }
+
+    private int leerOpcionMano(Scanner scanner, String mensaje) {
+        while (true) {
+            System.out.print(mensaje);
+            try {
+                return Integer.parseInt(scanner.nextLine().trim());
+            } catch (NumberFormatException e) {
+                System.out.println("Ingresa un numero valido.");
+            }
+        }
+    }
+
+    public boolean usarPokeball(int indiceMano) {
+        Carta pokeball = obtenerCartaDeMano(indiceMano);
+        if (pokeball == null || !pokeball.getNombre().equals("Pokeball")) return false;
+
+        sacarCartaDeMano(indiceMano);
+        descarte.apilar(pokeball);
+
+        Pila cartasTemporales = new Pila(15);
+        Carta pokemon = null;
+        while (!mazo.estaVacia()) {
+            Carta carta = mazo.desapilar();
+            if (!carta.esPocion()) {
+                pokemon = carta;
+                break;
+            }
+            cartasTemporales.apilar(carta);
+        }
+
+        while (!cartasTemporales.estaVacia()) {
+            mazo.apilar(cartasTemporales.desapilar());
+        }
+
+        if (pokemon == null) return false;
+        mano.add(pokemon);
+        return true;
     }
 
     public void mostrarMano() {
