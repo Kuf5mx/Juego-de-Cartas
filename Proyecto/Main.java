@@ -296,6 +296,13 @@ public class Main {
                 }
                 int idx = opcionMano - 1;
                 Carta elegida = actual.obtenerCartaDeMano(idx);
+                if (elegida == null) {
+                    System.out.println("Esa carta no existe en tu mano.");
+                    break;
+                }
+
+                actual.registrarJugada(elegida);
+
                 if (elegida.esPocion()) {
                     if (elegida.getNombre().equals("Pocion")) {
                         if (actual.usarPocionEnActivo(idx)) {

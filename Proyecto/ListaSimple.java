@@ -1,5 +1,5 @@
 /**
- * Lista simplemente enlazada para guardar el catalogo de cartas
+ * Lista simplemente enlazada para guardar cartas
  */
 public class ListaSimple {
 
@@ -20,9 +20,16 @@ public class ListaSimple {
         return inicio == null;
     }
 
-    /**
-     * Agrega una carta al final en O(1) usando la referencia fin
-     */
+    public int size() {
+        int tamano = 0;
+        Nodo actual = inicio;
+        while (actual != null) {
+            tamano++;
+            actual = actual.siguiente;
+        }
+        return tamano;
+    }
+
     public void agregar(Carta carta) {
         if (carta == null) {
             return;
@@ -40,9 +47,55 @@ public class ListaSimple {
         fin = nuevo;
     }
 
-    /**
-     * Elimina una carta por nombre de forma segura sin riesgo de NullPointerException
-     */
+    public Carta obtenerPorIndice(int indice) {
+        if (estaVacia()) {
+            return null;
+        }
+
+        if (indice < 0 || indice >= size()) {
+            return null;
+        }
+
+        Nodo actual = inicio;
+        for (int i = 0; i < indice; i++) {
+            actual = actual.siguiente;
+        }
+        return actual.carta;
+    }
+
+    public Carta quitarPorIndice(int indice) {
+        if (estaVacia()) {
+            throw new ListaVaciaException("No se puede sacar una carta de una lista vacia.");
+        }
+
+        if (indice < 0 || indice >= size()) {
+            throw new IndexOutOfBoundsException("Indice fuera de rango.");
+        }
+
+        if (indice == 0) {
+            Carta carta = inicio.carta;
+            inicio = inicio.siguiente;
+            if (inicio == null) {
+                fin = null;
+            }
+            return carta;
+        }
+
+        Nodo actual = inicio;
+        for (int i = 0; i < indice - 1; i++) {
+            actual = actual.siguiente;
+        }
+
+        Carta carta = actual.siguiente.carta;
+        actual.siguiente = actual.siguiente.siguiente;
+
+        if (actual.siguiente == null) {
+            fin = actual;
+        }
+
+        return carta;
+    }
+
     public void eliminar(String nombre) {
         if (inicio == null || nombre == null) {
             return;

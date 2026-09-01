@@ -5,6 +5,7 @@ public class ListaDoble {
 
     private Nodo inicio;
     private Nodo fin;
+    private int tamano;
 
     private class Nodo {
         Carta carta;
@@ -22,9 +23,10 @@ public class ListaDoble {
         return inicio == null;
     }
 
-    /**
-     * Agrega una carta al historial en O(1)
-     */
+    public int size() {
+        return tamano;
+    }
+
     public void agregar(Carta carta) {
         if (carta == null) {
             return;
@@ -35,12 +37,14 @@ public class ListaDoble {
         if (inicio == null) {
             inicio = nuevo;
             fin = nuevo;
+            tamano = 1;
             return;
         }
 
         fin.siguiente = nuevo;
         nuevo.anterior = fin;
         fin = nuevo;
+        tamano++;
     }
 
     public void mostrarAdelante() {

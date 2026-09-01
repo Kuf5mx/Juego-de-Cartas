@@ -1,5 +1,3 @@
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
 
 /**
@@ -10,7 +8,8 @@ public class Jugador {
     private String nombre;
     private Pila mazo;
     private Pila descarte;
-    private List<Carta> mano;
+    private ListaSimple mano;
+    private ListaDoble historialJugadas;
     private Carta activo;
     private Carta[] banca;
     private int puntos;
@@ -19,7 +18,8 @@ public class Jugador {
         this.nombre = nombre;
         this.mazo = mazo;
         this.descarte = new Pila(25);
-        this.mano = new ArrayList<>();
+        this.mano = new ListaSimple();
+        this.historialJugadas = new ListaDoble();
         this.banca = new Carta[3];
         this.puntos = 0;
     }
@@ -49,8 +49,22 @@ public class Jugador {
         return descarte;
     }
 
+    public ListaDoble getHistorialJugadas() {
+        return historialJugadas;
+    }
+
     public int getTamanoMano() {
         return mano.size();
+    }
+
+    public void registrarJugada(Carta carta) {
+        if (carta != null) {
+            historialJugadas.agregar(carta);
+        }
+    }
+
+    public void mostrarHistorialJugadas() {
+        historialJugadas.mostrarAdelante();
     }
 
     public void sumarPunto() {
@@ -61,7 +75,7 @@ public class Jugador {
         if (!mazo.estaVacia()) {
             Carta carta = mazo.desapilar();
             if (carta != null) {
-                mano.add(carta);
+                mano.agregar(carta);
                 return true;
             }
         }
@@ -72,10 +86,12 @@ public class Jugador {
         int pokemonesEnMano = 0;
         for (int i = 0; i < cantidad; i++) {
             if (!robarCartaAMano()) break;
-            if (!mano.get(mano.size() - 1).esPocion()) pokemonesEnMano++;
+            Carta ultima = mano.obtenerPorIndice(mano.size() - 1);
+            if (ultima != null && !ultima.esPocion()) pokemonesEnMano++;
         }
         while (pokemonesEnMano < 2 && robarCartaAMano()) {
-            if (!mano.get(mano.size() - 1).esPocion()) pokemonesEnMano++;
+            Carta ultima = mano.obtenerPorIndice(mano.size() - 1);
+            if (ultima != null && !ultima.esPocion()) pokemonesEnMano++;
         }
     }
 
@@ -139,29 +155,31 @@ public class Jugador {
         }
 
         if (pokemon == null) return false;
-        mano.add(pokemon);
+        mano.agregar(pokemon);
         return true;
     }
 
     public void mostrarMano() {
         System.out.println("Mano de " + nombre + " (" + mano.size() + " cartas):");
-        if (mano.isEmpty()) {
+        if (mano.estaVacia()) {
             System.out.println("  (Mano vacia)");
             return;
         }
         for (int i = 0; i < mano.size(); i++) {
-            System.out.println((i + 1) + ". " + mano.get(i));
+            System.out.println((i + 1) + ". " + mano.obtenerPorIndice(i));
         }
     }
 
     public Carta obtenerCartaDeMano(int indice) {
         if (indice < 0 || indice >= mano.size()) return null;
-        return mano.get(indice);
+        return mano.obtenerPorIndice(indice);
     }
 
     public Carta sacarCartaDeMano(int indice) {
-        if (indice < 0 || indice >= mano.size()) return null;
-        return mano.remove(indice);
+        if (indice < 0 || indice >= mano.size()) {
+            throw new ListaVaciaException("No se puede sacar una carta de una lista vacia.");
+        }
+        return mano.quitarPorIndice(indice);
     }
 
     public void descartarCartaDeMano(int indice) {
