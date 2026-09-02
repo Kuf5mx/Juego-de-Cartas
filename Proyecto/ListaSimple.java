@@ -3,6 +3,7 @@
  */
 public class ListaSimple {
 
+    private static final int MAX_CARTAS_MANO = 10;
     private Nodo inicio;
     private Nodo fin;
 
@@ -33,6 +34,10 @@ public class ListaSimple {
     public void agregar(Carta carta) {
         if (carta == null) {
             return;
+        }
+
+        if (size() >= MAX_CARTAS_MANO) {
+            throw new ListaVaciaException("La mano está llena. Máximo " + MAX_CARTAS_MANO + " cartas. Descarta o juega una carta antes de robar.");
         }
 
         Nodo nuevo = new Nodo(carta);

@@ -35,6 +35,10 @@ public class Carta {
         return danio;
     }
 
+    public int getVidaMaxima() {
+        return vidaMaxima;
+    }
+
     public boolean esPocion() {
         return esPocion;
     }

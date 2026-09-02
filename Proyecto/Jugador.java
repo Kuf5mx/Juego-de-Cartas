@@ -136,6 +136,10 @@ public class Jugador {
         Carta pokeball = obtenerCartaDeMano(indiceMano);
         if (pokeball == null || !pokeball.getNombre().equals("Pokeball")) return false;
 
+        if (mazo.estaVacia()) {
+            throw new ListaVaciaException("No hay cartas en el mazo. No se puede usar la Pokeball.");
+        }
+
         sacarCartaDeMano(indiceMano);
         descarte.apilar(pokeball);
 
@@ -154,7 +158,9 @@ public class Jugador {
             mazo.apilar(cartasTemporales.desapilar());
         }
 
-        if (pokemon == null) return false;
+        if (pokemon == null) {
+            throw new ListaVaciaException("No hay Pokemones disponibles en el mazo. Se devuelve la Pokeball.");
+        }
         mano.agregar(pokemon);
         return true;
     }
@@ -192,6 +198,10 @@ public class Jugador {
     public boolean usarPocionEnActivo(int indiceMano) {
         Carta carta = obtenerCartaDeMano(indiceMano);
         if (carta == null || !carta.esPocion() || activo == null) return false;
+
+        if (activo.getVida() >= activo.getVidaMaxima()) {
+            throw new ListaVaciaException("El Pokemon " + activo.getNombre() + " ya tiene la vida completa. No se puede usar la pocion.");
+        }
 
         activo.curar(carta.getVida());
         sacarCartaDeMano(indiceMano);

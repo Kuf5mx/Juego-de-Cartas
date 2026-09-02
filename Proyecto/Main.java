@@ -96,8 +96,13 @@ public class Main {
             System.out.println("Turno " + turno + " de " + actual.getNombre());
             System.out.println("Campo actual: " + campos.obtenerActual());
 
-            if (actual.robarCartaAMano()) {
-                System.out.println(actual.getNombre() + " robo una carta.");
+            try {
+                if (actual.robarCartaAMano()) {
+                    System.out.println(actual.getNombre() + " robo una carta.");
+                }
+            } catch (ListaVaciaException e) {
+                System.out.println("\n[ERROR] " + e.getMessage());
+                System.out.println("El jugador debe descartar una carta para continuar.");
             }
             System.out.println("Mano actual:");
             actual.mostrarMano();
@@ -305,15 +310,21 @@ public class Main {
 
                 if (elegida.esPocion()) {
                     if (elegida.getNombre().equals("Pocion")) {
-                        if (actual.usarPocionEnActivo(idx)) {
-                            System.out.println("Usaste una Pocion en " + actual.getActivo().getNombre() 
-                                + ". Vida actual: " + actual.getActivo().getVida());
+                        try {
+                            if (actual.usarPocionEnActivo(idx)) {
+                                System.out.println("Usaste una Pocion en " + actual.getActivo().getNombre() 
+                                    + ". Vida actual: " + actual.getActivo().getVida());
+                            }
+                        } catch (ListaVaciaException e) {
+                            System.out.println("\n[ERROR] " + e.getMessage());
                         }
                     } else if (elegida.getNombre().equals("Pokeball")) {
-                        if (actual.usarPokeball(idx)) {
-                            System.out.println("Usaste una Pokeball! Recibiste un Pokemon en tu mano.");
-                        } else {
-                            System.out.println("Usaste una Pokeball pero no quedan Pokemones en el mazo.");
+                        try {
+                            if (actual.usarPokeball(idx)) {
+                                System.out.println("Usaste una Pokeball! Recibiste un Pokemon en tu mano.");
+                            }
+                        } catch (ListaVaciaException e) {
+                            System.out.println("\n[ERROR] " + e.getMessage());
                         }
                     }
                 } else {
