@@ -1,120 +1,193 @@
+import java.util.Scanner;
+
 /**
- * Guarda el nombre del jugador para la cola de turnos.
+ * Representa a un jugador con mano dinamica y tablero
  */
 public class Jugador {
 
-    // Nombre del jugador.
     private String nombre;
-    // Mazo de robo.
     private Pila mazo;
-    // Mazo de descarte.
     private Pila descarte;
-    // Mano de dos cartas.
-    private Carta[] mano;
-    // Pokemon activo.
+    private ListaSimple mano;
+    private ListaDoble historialJugadas;
     private Carta activo;
-    // Banca de apoyo.
     private Carta[] banca;
-    // Puntos ganados.
     private int puntos;
 
-    /**
-     * Crea un jugador con su nombre.
-     */
     public Jugador(String nombre, Pila mazo) {
         this.nombre = nombre;
         this.mazo = mazo;
-        this.descarte = new Pila(20);
-        this.mano = new Carta[2];
+        this.descarte = new Pila(25);
+        this.mano = new ListaSimple();
+        this.historialJugadas = new ListaDoble();
         this.banca = new Carta[3];
         this.puntos = 0;
     }
 
-    // Devuelve el nombre.
     public String getNombre() {
         return nombre;
     }
 
-    // Devuelve el pokemon activo.
     public Carta getActivo() {
         return activo;
     }
 
-    // Devuelve una carta de la banca.
     public Carta getPokemonBanca(int indice) {
+        if (indice < 0 || indice >= banca.length) return null;
         return banca[indice];
     }
 
-    // Devuelve los puntos.
     public int getPuntos() {
         return puntos;
     }
 
-    // Devuelve el mazo.
     public Pila getMazo() {
         return mazo;
     }
 
-    // Devuelve el descarte.
     public Pila getDescarte() {
         return descarte;
     }
 
-    // Suma un punto.
+    public ListaDoble getHistorialJugadas() {
+        return historialJugadas;
+    }
+
+    public int getTamanoMano() {
+        return mano.size();
+    }
+
+    public void registrarJugada(Carta carta) {
+        if (carta != null) {
+            historialJugadas.agregar(carta);
+        }
+    }
+
+    public void mostrarHistorialJugadas() {
+        historialJugadas.mostrarAdelante();
+    }
+
     public void sumarPunto() {
         puntos++;
     }
 
-    // Muestra la mano de dos cartas.
-    public void mostrarMano() {
-        System.out.println("Mano de " + nombre + ":");
-        for (int i = 0; i < mano.length; i++) {
-            System.out.println((i + 1) + ". " + mano[i]);
-        }
-    }
-
-    // Llena la mano hasta tener dos cartas.
-    public void llenarMano() {
-        for (int i = 0; i < mano.length; i++) {
-            if (mano[i] == null) {
-                mano[i] = mazo.desapilar();
-            }
-        }
-    }
-
-    // Roba una sola carta y la guarda en la primera casilla libre de la mano.
     public boolean robarCartaAMano() {
-        for (int i = 0; i < mano.length; i++) {
-            if (mano[i] == null) {
-                mano[i] = mazo.desapilar();
-                return mano[i] != null;
+        if (!mazo.estaVacia()) {
+            Carta carta = mazo.desapilar();
+            if (carta != null) {
+                mano.agregar(carta);
+                return true;
             }
         }
-
         return false;
     }
 
-    // Regresa una carta de la mano.
+    public void robarCartasIniciales(int cantidad) {
+        int pokemonesEnMano = 0;
+        for (int i = 0; i < cantidad; i++) {
+            if (!robarCartaAMano()) break;
+            Carta ultima = mano.obtenerPorIndice(mano.size() - 1);
+            if (ultima != null && !ultima.esPocion()) pokemonesEnMano++;
+        }
+        while (pokemonesEnMano < 2 && robarCartaAMano()) {
+            Carta ultima = mano.obtenerPorIndice(mano.size() - 1);
+            if (ultima != null && !ultima.esPocion()) pokemonesEnMano++;
+        }
+    }
+
+    public void elegirCampoInicial(Scanner scanner) {
+        System.out.println("\n" + nombre + ", elige tu Pokemon activo y uno para la banca.");
+        mostrarMano();
+
+        while (activo == null) {
+            int opcion = leerOpcionMano(scanner, "Numero del Pokemon activo: ");
+            Carta elegido = obtenerCartaDeMano(opcion - 1);
+            if (elegido != null && !elegido.esPocion()) {
+                activo = sacarCartaDeMano(opcion - 1);
+            } else {
+                System.out.println("Debes elegir un Pokemon.");
+            }
+        }
+
+        while (true) {
+            int opcion = leerOpcionMano(scanner, "Numero del Pokemon para la banca (0 para dejarla vacia): ");
+            if (opcion == 0) return;
+            Carta elegido = obtenerCartaDeMano(opcion - 1);
+            if (elegido != null && !elegido.esPocion()) {
+                banca[0] = sacarCartaDeMano(opcion - 1);
+                return;
+            }
+            System.out.println("Debes elegir un Pokemon.");
+        }
+    }
+
+    private int leerOpcionMano(Scanner scanner, String mensaje) {
+        while (true) {
+            System.out.print(mensaje);
+            try {
+                return Integer.parseInt(scanner.nextLine().trim());
+            } catch (NumberFormatException e) {
+                System.out.println("Ingresa un numero valido.");
+            }
+        }
+    }
+
+    public boolean usarPokeball(int indiceMano) {
+        Carta pokeball = obtenerCartaDeMano(indiceMano);
+        if (pokeball == null || !pokeball.getNombre().equals("Pokeball")) return false;
+
+        if (mazo.estaVacia()) {
+            throw new ListaVaciaException("No hay cartas en el mazo. No se puede usar la Pokeball.");
+        }
+
+        sacarCartaDeMano(indiceMano);
+        descarte.apilar(pokeball);
+
+        Pila cartasTemporales = new Pila(15);
+        Carta pokemon = null;
+        while (!mazo.estaVacia()) {
+            Carta carta = mazo.desapilar();
+            if (!carta.esPocion()) {
+                pokemon = carta;
+                break;
+            }
+            cartasTemporales.apilar(carta);
+        }
+
+        while (!cartasTemporales.estaVacia()) {
+            mazo.apilar(cartasTemporales.desapilar());
+        }
+
+        if (pokemon == null) {
+            throw new ListaVaciaException("No hay Pokemones disponibles en el mazo. Se devuelve la Pokeball.");
+        }
+        mano.agregar(pokemon);
+        return true;
+    }
+
+    public void mostrarMano() {
+        System.out.println("Mano de " + nombre + " (" + mano.size() + " cartas):");
+        if (mano.estaVacia()) {
+            System.out.println("  (Mano vacia)");
+            return;
+        }
+        for (int i = 0; i < mano.size(); i++) {
+            System.out.println((i + 1) + ". " + mano.obtenerPorIndice(i));
+        }
+    }
+
     public Carta obtenerCartaDeMano(int indice) {
-        if (indice < 0 || indice >= mano.length) {
-            return null;
-        }
-
-        return mano[indice];
+        if (indice < 0 || indice >= mano.size()) return null;
+        return mano.obtenerPorIndice(indice);
     }
 
-    // Saca una carta de la mano.
     public Carta sacarCartaDeMano(int indice) {
-        if (indice < 0 || indice >= mano.length) {
-            return null;
+        if (indice < 0 || indice >= mano.size()) {
+            throw new ListaVaciaException("No se puede sacar una carta de una lista vacia.");
         }
-
-        Carta carta = mano[indice];
-        mano[indice] = null;
-        return carta;
+        return mano.quitarPorIndice(indice);
     }
 
-    // Descarta una carta de la mano.
     public void descartarCartaDeMano(int indice) {
         Carta carta = sacarCartaDeMano(indice);
         if (carta != null) {
@@ -122,25 +195,25 @@ public class Jugador {
         }
     }
 
-    // Usa una pocion de la mano sobre el activo y la descarta.
     public boolean usarPocionEnActivo(int indiceMano) {
         Carta carta = obtenerCartaDeMano(indiceMano);
-        if (carta == null || !carta.esPocion() || activo == null) {
-            return false;
+        if (carta == null || !carta.esPocion() || activo == null) return false;
+
+        if (activo.getVida() >= activo.getVidaMaxima()) {
+            throw new ListaVaciaException("El Pokemon " + activo.getNombre() + " ya tiene la vida completa. No se puede usar la pocion.");
         }
 
         activo.curar(carta.getVida());
-        descartarCartaDeMano(indiceMano);
+        sacarCartaDeMano(indiceMano);
+        descarte.apilar(carta);
         return true;
     }
 
-    // Muestra el descarte.
     public void mostrarDescarte() {
         System.out.println("Descarte de " + nombre + ":");
         descarte.mostrar();
     }
 
-    // Muestra el campo del jugador.
     public void mostrarCampo() {
         System.out.println("Activo de " + nombre + ": " + activo);
         for (int i = 0; i < banca.length; i++) {
@@ -148,104 +221,66 @@ public class Jugador {
         }
     }
 
-    // Pone el primer campo inicial.
     public void prepararCampoInicial() {
-        if (activo == null) {
-            activo = mazo.desapilar();
+        while (activo == null && !mazo.estaVacia()) {
+            Carta c = mazo.desapilar();
+            if (!c.esPocion()) {
+                activo = c;
+            } else {
+                descarte.apilar(c);
+            }
         }
 
         for (int i = 0; i < banca.length; i++) {
-            if (banca[i] == null) {
-                banca[i] = mazo.desapilar();
+            while (banca[i] == null && !mazo.estaVacia()) {
+                Carta c = mazo.desapilar();
+                if (!c.esPocion()) {
+                    banca[i] = c;
+                } else {
+                    descarte.apilar(c);
+                }
             }
         }
     }
 
-    // Pone una carta en activo si puede.
-    public Carta robarCarta() {
-        return mazo.desapilar();
-    }
-
-    // Intenta poner una carta en activo.
-    public void jugarCarta(Carta carta) {
-        if (carta == null) {
-            return;
-        }
-
-        if (activo == null) {
-            activo = carta;
-            return;
-        }
-
-        for (int i = 0; i < banca.length; i++) {
-            if (banca[i] == null) {
-                banca[i] = carta;
-                return;
-            }
-        }
-
-        descarte.apilar(carta);
-    }
-
-    // Coloca una carta en activo.
     public boolean ponerCartaEnActivo(Carta carta) {
-        if (carta == null || activo != null) {
-            return false;
-        }
-
+        if (carta == null || carta.esPocion() || activo != null) return false;
         activo = carta;
         return true;
     }
 
-    // Coloca una carta en banca.
     public boolean ponerCartaEnBanca(Carta carta, int indice) {
-        if (carta == null || indice < 0 || indice >= banca.length || banca[indice] != null) {
+        if (carta == null || carta.esPocion() || indice < 0 || indice >= banca.length || banca[indice] != null) {
             return false;
         }
-
         banca[indice] = carta;
         return true;
     }
 
-    // Cambia el activo con la banca.
     public boolean cambiarActivoConBanca(int indice) {
-        if (indice < 0 || indice >= banca.length || banca[indice] == null) {
-            return false;
-        }
-
-        Carta temporal = activo;
+        if (indice < 0 || indice >= banca.length || banca[indice] == null) return false;
+        Carta temp = activo;
         activo = banca[indice];
-        banca[indice] = temporal;
+        banca[indice] = temp;
         return true;
     }
 
-    // Manda una carta al descarte.
-    public void descartarCarta(Carta carta) {
-        if (carta != null) {
-            descarte.apilar(carta);
-        }
-    }
-
-    // Recibe dano en el pokemon activo.
     public void recibirDanio(int danio) {
         if (activo != null) {
             activo.recibirDanio(danio);
         }
     }
 
-    // Revisa si el activo ya perdio.
     public boolean activoFueraDeCombate() {
         return activo != null && activo.estaFueraDeCombate();
     }
 
-    // Saca al activo.
     public Carta sacarActivo() {
         Carta carta = activo;
         activo = null;
         return carta;
     }
 
-    // Promueve una carta de la banca al activo.
     public boolean promoverSiguientePokemon() {
         for (int i = 0; i < banca.length; i++) {
             if (banca[i] != null) {
@@ -254,31 +289,15 @@ public class Jugador {
                 return true;
             }
         }
-
-        activo = mazo.desapilar();
-        return activo != null;
-    }
-
-    // Revisa si sigue teniendo pokemon.
-    public boolean tienePokemonEnJuego() {
-        if (activo != null) {
-            return true;
-        }
-
-        for (int i = 0; i < banca.length; i++) {
-            if (banca[i] != null) {
+        while (!mazo.estaVacia()) {
+            Carta c = mazo.desapilar();
+            if (!c.esPocion()) {
+                activo = c;
                 return true;
+            } else {
+                descarte.apilar(c);
             }
         }
-
-        return !mazo.estaVacia();
-    }
-
-    /**
-     * Devuelve un texto corto del jugador.
-     */
-    @Override
-    public String toString() {
-        return "Jugador{" + "nombre='" + nombre + "'" + '}';
+        return false;
     }
 }
