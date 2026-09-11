@@ -1,4 +1,5 @@
 import java.util.Scanner;
+import java.util.Random;
 
 /**
  * Representa a un jugador con mano dinamica y tablero
@@ -87,11 +88,11 @@ public class Jugador {
         for (int i = 0; i < cantidad; i++) {
             if (!robarCartaAMano()) break;
             Carta ultima = mano.obtenerPorIndice(mano.size() - 1);
-            if (ultima != null && !ultima.esPocion()) pokemonesEnMano++;
+            if (ultima != null && ultima.esPokemon() && ultima.getFase() == 1) pokemonesEnMano++;
         }
         while (pokemonesEnMano < 2 && robarCartaAMano()) {
             Carta ultima = mano.obtenerPorIndice(mano.size() - 1);
-            if (ultima != null && !ultima.esPocion()) pokemonesEnMano++;
+            if (ultima != null && ultima.esPokemon() && ultima.getFase() == 1) pokemonesEnMano++;
         }
     }
 
@@ -102,10 +103,10 @@ public class Jugador {
         while (activo == null) {
             int opcion = leerOpcionMano(scanner, "Numero del Pokemon activo: ");
             Carta elegido = obtenerCartaDeMano(opcion - 1);
-            if (elegido != null && !elegido.esPocion()) {
+                if (elegido != null && elegido.esPokemon() && elegido.getFase() == 1) {
                 activo = sacarCartaDeMano(opcion - 1);
             } else {
-                System.out.println("Debes elegir un Pokemon.");
+                    System.out.println("Eleccion invalida: el activo debe ser un Pokemon de primera fase. Elige un numero de tu mano que corresponda a Bulbasaur, Pichu u otro basico.");
             }
         }
 
@@ -113,11 +114,11 @@ public class Jugador {
             int opcion = leerOpcionMano(scanner, "Numero del Pokemon para la banca (0 para dejarla vacia): ");
             if (opcion == 0) return;
             Carta elegido = obtenerCartaDeMano(opcion - 1);
-            if (elegido != null && !elegido.esPocion()) {
+                if (elegido != null && elegido.esPokemon() && elegido.getFase() == 1) {
                 banca[0] = sacarCartaDeMano(opcion - 1);
                 return;
             }
-            System.out.println("Debes elegir un Pokemon.");
+                System.out.println("Eleccion invalida: la banca solo puede recibir un Pokemon de primera fase. Elige otro numero o escribe 0 para dejarla vacia.");
         }
     }
 
@@ -143,11 +144,11 @@ public class Jugador {
         sacarCartaDeMano(indiceMano);
         descarte.apilar(pokeball);
 
-        Pila cartasTemporales = new Pila(15);
+        Pila cartasTemporales = new Pila(30);
         Carta pokemon = null;
         while (!mazo.estaVacia()) {
             Carta carta = mazo.desapilar();
-            if (!carta.esPocion()) {
+                if (carta != null && carta.esPokemon() && carta.getFase() == 1) {
                 pokemon = carta;
                 break;
             }
@@ -209,6 +210,17 @@ public class Jugador {
         return true;
     }
 
+    public boolean usarSuperPocion(int indiceMano, Random random) {
+        Carta carta = obtenerCartaDeMano(indiceMano);
+        if (carta == null || !carta.esPocion() || !carta.esCarta("Superpocion") || activo == null) return false;
+        if (activo.getVida() >= activo.getVidaMaxima()) return false;
+        activo.curar(carta.getVida());
+        if (random.nextInt(100) < 50) activo.quitarEnergia(1);
+        sacarCartaDeMano(indiceMano);
+        descarte.apilar(carta);
+        return true;
+    }
+
     public void mostrarDescarte() {
         System.out.println("Descarte de " + nombre + ":");
         descarte.mostrar();
@@ -224,7 +236,7 @@ public class Jugador {
     public void prepararCampoInicial() {
         while (activo == null && !mazo.estaVacia()) {
             Carta c = mazo.desapilar();
-            if (!c.esPocion()) {
+            if (c.esPokemon() && c.getFase() == 1) {
                 activo = c;
             } else {
                 descarte.apilar(c);
@@ -234,7 +246,7 @@ public class Jugador {
         for (int i = 0; i < banca.length; i++) {
             while (banca[i] == null && !mazo.estaVacia()) {
                 Carta c = mazo.desapilar();
-                if (!c.esPocion()) {
+                if (c.esPokemon() && c.getFase() == 1) {
                     banca[i] = c;
                 } else {
                     descarte.apilar(c);
@@ -257,12 +269,107 @@ public class Jugador {
         return true;
     }
 
+    public boolean ponerPokemonEnTablero(Carta carta, int turno) {
+        if (carta == null || !carta.esPokemon() || carta.getFase() != 1) return false;
+        carta.prepararParaTablero(turno);
+        if (activo == null) {
+            activo = carta;
+            return true;
+        }
+        for (int i = 0; i < banca.length; i++) {
+            if (banca[i] == null) {
+                banca[i] = carta;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean asignarEnergia(int posicion) {
+        Carta destino = posicion < 0 ? activo : getPokemonBanca(posicion);
+        if (destino == null) return false;
+        destino.agregarEnergia();
+        return true;
+    }
+
+    public boolean puedeRetirarse() {
+        return activo != null && !"Paralisis".equals(activo.getEstado())
+                && !"Congelacion".equals(activo.getEstado());
+    }
+
+    public int costoRetirada() {
+        return activo == null ? 0 : activo.getFase();
+    }
+
     public boolean cambiarActivoConBanca(int indice) {
         if (indice < 0 || indice >= banca.length || banca[indice] == null) return false;
         Carta temp = activo;
         activo = banca[indice];
         banca[indice] = temp;
         return true;
+    }
+
+    public boolean retirarActivoConBanca(int indice) {
+        if (!puedeRetirarse() || indice < 0 || indice >= banca.length || banca[indice] == null) return false;
+        if (!activo.quitarEnergia(costoRetirada())) return false;
+        Carta temp = activo;
+        activo = banca[indice];
+        banca[indice] = temp;
+        return true;
+    }
+
+    public Carta evolucionSiguiente(Carta evolucion, int turno, boolean usarCaramelo) {
+        if (evolucion == null || activo == null || !activo.puedeEvolucionar(turno) && !usarCaramelo) return null;
+        if (!evolucion.getNombre().equalsIgnoreCase(nombreSiguiente(activo.getNombre()))) return null;
+        Carta anterior = activo;
+        activo = crearEvolucion(anterior, evolucion, turno);
+        return anterior;
+    }
+
+    public Carta evolucionarBanca(int indice, Carta evolucion, int turno, boolean usarCaramelo) {
+        if (indice < 0 || indice >= banca.length || banca[indice] == null || evolucion == null) return null;
+        Carta anterior = banca[indice];
+        if ((!anterior.puedeEvolucionar(turno) && !usarCaramelo)
+                || !evolucion.getNombre().equalsIgnoreCase(nombreSiguiente(anterior.getNombre()))) return null;
+        banca[indice] = crearEvolucion(anterior, evolucion, turno);
+        return anterior;
+    }
+
+    private Carta crearEvolucion(Carta anterior, Carta evolucion, int turno) {
+        double porcentaje = anterior.getVidaMaxima() == 0 ? 0
+                : (double) anterior.getVida() / anterior.getVidaMaxima();
+        evolucion.prepararParaTablero(turno);
+        evolucion.registrarEvolucion(turno);
+        evolucion.establecerEnergia(anterior.getEnergias());
+        evolucion.recibirDanio(Math.max(0, evolucion.getVidaMaxima()
+                - (int) Math.round(evolucion.getVidaMaxima() * porcentaje)));
+        return evolucion;
+    }
+
+    private String nombreSiguiente(String nombre) {
+        if (nombre.equals("Bulbasaur")) return "Ivysaur";
+        if (nombre.equals("Ivysaur")) return "Venusaur";
+        if (nombre.equals("Charmander")) return "Charmeleon";
+        if (nombre.equals("Charmeleon")) return "Charizard";
+        if (nombre.equals("Squirtle")) return "Wartortle";
+        if (nombre.equals("Wartortle")) return "Blastoise";
+        if (nombre.equals("Pichu")) return "Pikachu";
+        if (nombre.equals("Pikachu")) return "Raichu";
+        if (nombre.equals("Oddish")) return "Gloom";
+        if (nombre.equals("Gloom")) return "Vileplume";
+        if (nombre.equals("Magikarp")) return "Gyarados";
+        return "";
+    }
+
+    public String procesarEstadoInicioTurno(Random random) {
+        if (activo == null || !activo.tieneEstado()) return "";
+        String estado = activo.getEstado();
+        if (random.nextInt(100) < 50) {
+            activo.curarEstado();
+            return activo.getNombre() + " se curo de " + estado + ".";
+        }
+        activo.recibirDanioDeEstado();
+        return activo.getNombre() + " sufre 10 de daño por " + estado + ".";
     }
 
     public void recibirDanio(int danio) {
@@ -281,6 +388,86 @@ public class Jugador {
         return carta;
     }
 
+    public boolean tienePokemonDisponible() {
+        if (activo != null) return true;
+        for (int i = 0; i < banca.length; i++) {
+            if (banca[i] != null) return true;
+        }
+        for (int i = 0; i < getTamanoMano(); i++) {
+            Carta carta = obtenerCartaDeMano(i);
+            if (carta != null && carta.esPokemon() && carta.getFase() == 1) return true;
+        }
+        return hayPokemonBasicoEnMazo();
+    }
+
+    private boolean hayPokemonBasicoEnMazo() {
+        Pila temporal = new Pila(30);
+        boolean encontrado = false;
+        while (!mazo.estaVacia()) {
+            Carta carta = mazo.desapilar();
+            if (carta != null && carta.esPokemon() && carta.getFase() == 1) encontrado = true;
+            temporal.apilar(carta);
+        }
+        while (!temporal.estaVacia()) mazo.apilar(temporal.desapilar());
+        return encontrado;
+    }
+
+    public boolean promoverObligatoriamente(Scanner scanner) {
+        int cantidadEnMano = 0;
+        for (int i = 0; i < getTamanoMano(); i++) {
+            Carta carta = obtenerCartaDeMano(i);
+            if (carta != null && carta.esPokemon() && carta.getFase() == 1) {
+                cantidadEnMano++;
+            }
+        }
+        if (cantidadEnMano > 0) {
+            System.out.println("Debes elegir un Pokemon de tu mano para ocupar la posicion activa.");
+            for (int i = 0; i < getTamanoMano(); i++) {
+                Carta carta = obtenerCartaDeMano(i);
+                if (carta != null && carta.esPokemon() && carta.getFase() == 1) {
+                    System.out.println((i + 1) + ". " + carta.getNombre());
+                }
+            }
+            while (true) {
+                System.out.print("Numero del Pokemon que entra como activo: ");
+                try {
+                    int opcion = Integer.parseInt(scanner.nextLine().trim()) - 1;
+                    Carta elegido = obtenerCartaDeMano(opcion);
+                    if (elegido != null && elegido.esPokemon() && elegido.getFase() == 1) {
+                        activo = sacarCartaDeMano(opcion);
+                        return true;
+                    }
+                } catch (NumberFormatException e) {
+                    // Se vuelve a solicitar una opcion valida.
+                }
+                System.out.println("Eleccion invalida: selecciona el numero de un Pokemon de fase 1 mostrado arriba.");
+            }
+        }
+        for (int i = 0; i < banca.length; i++) {
+            if (banca[i] != null) {
+                activo = banca[i];
+                banca[i] = null;
+                return true;
+            }
+        }
+        for (int i = 0; i < getTamanoMano(); i++) {
+            Carta carta = obtenerCartaDeMano(i);
+            if (carta != null && carta.esPokemon() && carta.getFase() == 1) {
+                activo = sacarCartaDeMano(i);
+                return true;
+            }
+        }
+        while (!mazo.estaVacia()) {
+            Carta carta = mazo.desapilar();
+            if (carta != null && carta.esPokemon() && carta.getFase() == 1) {
+                activo = carta;
+                return true;
+            }
+            if (carta != null) descarte.apilar(carta);
+        }
+        return false;
+    }
+
     public boolean promoverSiguientePokemon() {
         for (int i = 0; i < banca.length; i++) {
             if (banca[i] != null) {
@@ -291,7 +478,7 @@ public class Jugador {
         }
         while (!mazo.estaVacia()) {
             Carta c = mazo.desapilar();
-            if (!c.esPocion()) {
+                if (c != null && c.esPokemon() && c.getFase() == 1) {
                 activo = c;
                 return true;
             } else {
