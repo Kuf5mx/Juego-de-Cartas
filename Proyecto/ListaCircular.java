@@ -1,31 +1,32 @@
 /**
- * Lista circular para cambiar los campos de batalla.
+ * Lista circular eficiente para cambiar los campos de batalla
  */
 public class ListaCircular {
 
-    // Nodo actual del ciclo.
     private Nodo actual;
 
-    // Nodo interno para el campo.
     private class Nodo {
-        // Nombre del campo.
         String campo;
-        // Siguiente campo.
         Nodo siguiente;
 
-        /**
-         * Nodo que guarda un campo.
-         */
         public Nodo(String campo) {
             this.campo = campo;
             this.siguiente = null;
         }
     }
 
+    public boolean estaVacia() {
+        return actual == null;
+    }
+
     /**
-     * Agrega un campo al ciclo.
+     * Agrega un campo al ciclo en O(1) sin recorrer la lista
      */
     public void agregar(String campo) {
+        if (campo == null) {
+            return;
+        }
+
         Nodo nuevo = new Nodo(campo);
 
         if (actual == null) {
@@ -34,31 +35,18 @@ public class ListaCircular {
             return;
         }
 
-        // Buscamos el ultimo para cerrar el ciclo.
-        Nodo ultimo = actual;
-        while (ultimo.siguiente != actual) {
-            ultimo = ultimo.siguiente;
-        }
-
-        ultimo.siguiente = nuevo;
-        nuevo.siguiente = actual;
+        // Insercion instantanea O(1) entre actual y actual.siguiente
+        nuevo.siguiente = actual.siguiente;
+        actual.siguiente = nuevo;
     }
 
-    /**
-     * Avanza al siguiente campo.
-     */
     public void siguienteCampo() {
-        // Avanza al siguiente campo.
         if (actual != null) {
             actual = actual.siguiente;
         }
     }
 
-    /**
-     * Muestra el campo activo.
-     */
     public void mostrarActual() {
-        // Si no hay campo, avisamos.
         if (actual == null) {
             System.out.println("No hay campo activo");
             return;
@@ -67,9 +55,6 @@ public class ListaCircular {
         System.out.println("Campo activo: " + actual.campo);
     }
 
-    /**
-     * Devuelve el nombre del campo actual.
-     */
     public String obtenerActual() {
         return actual == null ? null : actual.campo;
     }

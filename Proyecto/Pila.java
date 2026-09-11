@@ -1,17 +1,19 @@
+import java.util.Scanner;
+
 /**
  * Pila sencilla para guardar cartas.
  */
 public class Pila {
 
-    // Arreglo de cartas.
+    // Arreglo donde se guardan las cartas
     private Carta[] elementos;
-    // Posicion del tope.
+    // Indice que indica cuantas cartas hay en la pila
     private int tope;
-    // Capacidad maxima.
+    // Cantidad maxima de cartas que soporta la pila
     private int capacidad;
 
     /**
-     * Crea la pila con un tamaño fijo.
+     * Constructor para definir el tamano de la pila
      */
     public Pila(int capacidad) {
         this.capacidad = capacidad;
@@ -19,20 +21,21 @@ public class Pila {
         this.tope = 0;
     }
 
-    // Revisa si la pila esta vacia.
+    // Comprueba si no hay ninguna carta en la pila
     public boolean estaVacia() {
         return tope == 0;
     }
 
-    // Revisa si la pila ya no cabe.
+    // Comprueba si la pila alcanzo su limite de capacidad
     public boolean estaLlena() {
         return tope == capacidad;
     }
 
     /**
-     * Mete una carta en la pila.
+     * Agrega una carta en la parte superior de la pila
      */
     public void apilar(Carta carta) {
+        // Validamos que exista espacio antes de insertar
         if (estaLlena()) {
             System.out.println("La pila está llena");
             return;
@@ -43,14 +46,15 @@ public class Pila {
     }
 
     /**
-     * Saca la carta de arriba.
+     * Retira y devuelve la carta ubicada en el tope
      */
     public Carta desapilar() {
+        // Si no hay cartas devolvemos null
         if (estaVacia()) {
             return null;
         }
 
-        // Bajamos el tope y sacamos la carta.
+        // Retrocedemos el tope y liberamos la posicion
         tope--;
         Carta carta = elementos[tope];
         elementos[tope] = null;
@@ -58,7 +62,7 @@ public class Pila {
     }
 
     /**
-     * Mira la carta de arriba sin quitarla.
+     * Retorna la carta superior sin eliminarla de la pila
      */
     public Carta cima() {
         if (estaVacia()) {
@@ -69,7 +73,7 @@ public class Pila {
     }
 
     /**
-     * Muestra la pila de arriba hacia abajo.
+     * Imprime las cartas desde la parte superior hasta la base
      */
     public void mostrar() {
         if (estaVacia()) {
@@ -77,35 +81,44 @@ public class Pila {
             return;
         }
 
-        // Mostramos de arriba hacia abajo.
+        // Recorremos el arreglo de atras hacia adelante
         for (int i = tope - 1; i >= 0; i--) {
             System.out.println(elementos[i]);
         }
     }
 
-    // Muestra la pila con numeros, para poder elegir una carta y editarla.
+    // Imprime la lista numerada para facilitar la eleccion de cartas
     public void mostrarConNumeros() {
         if (estaVacia()) {
             System.out.println("(vacio)");
             return;
         }
 
+        // Mostramos un contador visual para la seleccion
         for (int i = tope - 1; i >= 0; i--) {
             System.out.println((tope - i) + ". " + elementos[i]);
         }
     }
 
-    // Quita la carta con el numero que se vio en mostrarConNumeros().
+    // Remueve una carta especifica usando el numero de opcion ingresado
     public Carta quitarPorIndice(int numero) {
+        // Convertimos el numero ingresado al indice real del arreglo
         int posicion = tope - numero;
+
+        // Verificamos que la seleccion este dentro del rango valido
         if (numero < 1 || posicion < 0 || posicion >= tope) {
             return null;
         }
 
+        // Guardamos la carta elegida
         Carta carta = elementos[posicion];
+
+        // Desplazamos los elementos para cubrir el hueco dejado
         for (int i = posicion; i < tope - 1; i++) {
             elementos[i] = elementos[i + 1];
         }
+
+        // Actualizamos el tope y vaciamos el ultimo espacio sobrante
         tope--;
         elementos[tope] = null;
         return carta;

@@ -1,25 +1,17 @@
 /**
- * Lista doble para llevar el historial de jugadas.
+ * Lista doblemente enlazada para llevar el historial de jugadas
  */
 public class ListaDoble {
 
-    // Inicio de la lista.
     private Nodo inicio;
-    // Final de la lista.
     private Nodo fin;
+    private int tamano;
 
-    // Nodo interno de la lista doble.
     private class Nodo {
-        // Carta de la jugada.
         Carta carta;
-        // Nodo anterior.
         Nodo anterior;
-        // Nodo siguiente.
         Nodo siguiente;
 
-        /**
-         * Nodo para recorrer hacia adelante y hacia atras.
-         */
         public Nodo(Carta carta) {
             this.carta = carta;
             this.anterior = null;
@@ -27,28 +19,40 @@ public class ListaDoble {
         }
     }
 
-    /**
-     * Agrega una carta al historial.
-     */
+    public boolean estaVacia() {
+        return inicio == null;
+    }
+
+    public int size() {
+        return tamano;
+    }
+
     public void agregar(Carta carta) {
+        if (carta == null) {
+            return;
+        }
+
         Nodo nuevo = new Nodo(carta);
 
         if (inicio == null) {
             inicio = nuevo;
             fin = nuevo;
+            tamano = 1;
             return;
         }
 
-        // Pegamos el nodo al final.
         fin.siguiente = nuevo;
         nuevo.anterior = fin;
         fin = nuevo;
+        tamano++;
     }
 
-    /**
-     * Muestra el historial de inicio a fin.
-     */
     public void mostrarAdelante() {
+        if (estaVacia()) {
+            System.out.println("El historial esta vacio");
+            return;
+        }
+
         Nodo actual = inicio;
         while (actual != null) {
             System.out.println(actual.carta);
@@ -56,10 +60,12 @@ public class ListaDoble {
         }
     }
 
-    /**
-     * Muestra el historial de fin a inicio.
-     */
     public void mostrarAtras() {
+        if (estaVacia()) {
+            System.out.println("El historial esta vacio");
+            return;
+        }
+
         Nodo actual = fin;
         while (actual != null) {
             System.out.println(actual.carta);
