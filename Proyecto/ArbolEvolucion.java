@@ -11,21 +11,31 @@ public class ArbolEvolucion {
     }
 
     private Nodo raiz;
+    private List<Nodo> raices = new ArrayList<>();
 
-    public ArbolEvolucion(Carta cartaInicial) { raiz = new Nodo(cartaInicial); }
+    public ArbolEvolucion(Carta cartaInicial) {
+        raiz = new Nodo(cartaInicial);
+        raices.add(raiz);
+    }
+
+    public void agregarRaiz(Carta carta) {
+        if (carta != null) raices.add(new Nodo(carta));
+    }
 
     public void agregarEvolucion(String nombreAnterior, Carta evolucion) {
-        Nodo anterior = buscar(raiz, nombreAnterior);
-        if (anterior != null) anterior.hijos.add(new Nodo(evolucion));
+        Nodo anterior = buscarEnRaices(nombreAnterior);
+        if (anterior != null && evolucion != null) anterior.hijos.add(new Nodo(evolucion));
     }
 
     public Carta buscarSiguiente(String nombreActual) {
-        Nodo actual = buscar(raiz, nombreActual);
+        Nodo actual = buscarEnRaices(nombreActual);
         if (actual == null || actual.hijos.isEmpty()) return null;
         return actual.hijos.get(0).carta;
     }
 
-    public void recorrer() { recorrer(raiz, 0); }
+    public void recorrer() {
+        for (Nodo raizActual : raices) recorrer(raizActual, 0);
+    }
 
     private void recorrer(Nodo nodo, int nivel) {
         if (nodo == null) return;
@@ -39,6 +49,14 @@ public class ArbolEvolucion {
         if (nodo.carta.esCarta(nombre)) return nodo;
         for (Nodo hijo : nodo.hijos) {
             Nodo encontrado = buscar(hijo, nombre);
+            if (encontrado != null) return encontrado;
+        }
+        return null;
+    }
+
+    private Nodo buscarEnRaices(String nombre) {
+        for (Nodo raizActual : raices) {
+            Nodo encontrado = buscar(raizActual, nombre);
             if (encontrado != null) return encontrado;
         }
         return null;

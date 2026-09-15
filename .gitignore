@@ -1,1 +1,14 @@
 *.class
+
+# IDE
+/.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Java build
+/bin/
+/build/
+out/
