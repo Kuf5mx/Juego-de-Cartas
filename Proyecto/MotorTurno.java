@@ -207,6 +207,11 @@ public class MotorTurno {
         if (tieneVentaja(pokemon.getTipo(), defensor.getActivo().getTipo())) { danio += 10; bonos.append("ventaja elemental +10"); }
         if (coincideCampo(pokemon.getTipo(), campoActual)) { danio += 10; agregarBono(bonos, "campo favorable +10"); }
         if (tieneDesventaja(defensor.getActivo().getTipo(), campoActual)) { danio += 10; agregarBono(bonos, "campo desfavorable +10"); }
+        int bonoBanca = modificadorBancaDefensa(defensor, pokemon.getTipo());
+        if (bonoBanca > 0) {
+            danio = Math.max(0, danio - bonoBanca);
+            agregarBono(bonos, "banca defensiva -" + bonoBanca);
+        }
         if (pokemon.esCarta("Charizard")) danio += 10;
         if (pokemon.esCarta("Blastoise") && pokemon.getEnergias() >= 1) danio += 10;
         if (pokemon.esCarta("Pikachu") && random.nextInt(100) < 50) danio += 10;
@@ -303,6 +308,21 @@ public class MotorTurno {
         if (campo.contains("Agua")) return tipo.equals("Fuego");
         if (campo.contains("Rayo")) return tipo.equals("Agua");
         return false;
+    }
+
+    private int modificadorBancaDefensa(Jugador defensor, String tipoAtacante) {
+        if (defensor == null || defensor.getActivo() == null) return 0;
+        int total = 0;
+        for (int i = 0; i < 3; i++) {
+            Carta apoyo = defensor.getPokemonBanca(i);
+            if (apoyo == null) continue;
+            String tipoApoyo = apoyo.getTipo();
+            if (tieneVentaja(tipoApoyo, tipoAtacante)) {
+                total += 5;
+            }
+        }
+        if (total > 15) total = 15;
+        return total;
     }
 
     private String estadoDeTipo(String tipo) {
