@@ -44,6 +44,8 @@ public class VistaJuego {
     private int indiceSeleccionado = -1;
     private int indiceManoSeleccionada = -1;
 
+    
+
     public void mostrar(Stage stage) {
         this.stage = stage;
         mostrarConfiguracion();
@@ -297,22 +299,60 @@ public class VistaJuego {
         actualizarEnergiaVisual();
     }
 
-    private VBox crearZonaJugador(Jugador jugadorVista, boolean esJugador) {
-        VBox zona = new VBox(6);
-        zona.setPadding(new Insets(8));
-        zona.setStyle(esJugador ? "-fx-background-color: #2f6690; -fx-background-radius: 8;"
-                : "-fx-background-color: #7f5539; -fx-background-radius: 8;");
-        Label nombre = new Label(jugadorVista.getNombre() + " | Puntos: " + jugadorVista.getPuntos());
-        nombre.setStyle("-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
-        HBox banca = new HBox(14);
-        banca.setAlignment(Pos.CENTER);
-        for (int i = 0; i < 3; i++) banca.getChildren().add(crearCartaTablero(jugadorVista.getPokemonBanca(i)));
-        HBox activo = new HBox(crearEspacioActivo(jugadorVista));
-        activo.setAlignment(Pos.CENTER);
-        zona.getChildren().addAll(nombre, new Label("BANCA"), banca, new Label("ACTIVO"), activo);
-        if (esJugador) zona.getChildren().add(crearMano());
-        return zona;
+private VBox crearZonaJugador(Jugador jugadorVista, boolean esJugador) {
+    VBox zona = new VBox(6);
+    zona.setPadding(new Insets(8));
+    zona.setStyle(esJugador
+            ? "-fx-background-color: #2f6690; -fx-background-radius: 8;"
+            : "-fx-background-color: #7f5539; -fx-background-radius: 8;");
+
+    Label nombre = new Label(
+            jugadorVista.getNombre() + " | Puntos: " + jugadorVista.getPuntos()
+    );
+    nombre.setStyle(
+            "-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;"
+    );
+
+    HBox banca = new HBox(14);
+    banca.setAlignment(Pos.CENTER);
+
+    for (int i = 0; i < 3; i++) {
+        banca.getChildren().add(
+                crearCartaTablero(jugadorVista.getPokemonBanca(i))
+        );
     }
+
+    HBox activo = new HBox(crearEspacioActivo(jugadorVista));
+    activo.setAlignment(Pos.CENTER);
+
+    if (esJugador) {
+        // JUGADOR 1:
+        // Activo arriba y banca abajo.
+        zona.getChildren().addAll(
+                nombre,
+                new Label("ACTIVO"),
+                activo,
+                new Label("BANCA"),
+                banca
+        );
+
+        // La mano del jugador queda debajo de su campo.
+        zona.getChildren().add(crearMano());
+
+    } else {
+        // JUGADOR 2:
+        // Banca arriba y activo abajo.
+        zona.getChildren().addAll(
+                nombre,
+                new Label("BANCA"),
+                banca,
+                new Label("ACTIVO"),
+                activo
+        );
+    }
+
+    return zona;
+}
 
     private VBox crearEspacioActivo(Jugador propietario) {
         Carta carta = propietario.getActivo();
@@ -327,27 +367,148 @@ public class VistaJuego {
         return espacio;
     }
 
-    private StackPane crearSprite(Carta carta) {
-        StackPane contenedor = new StackPane();
-        contenedor.setPrefSize(180, 125);
-        String ruta = "/imagenes/sprites/" + carta.getNombre().toLowerCase() + ".png";
-        java.io.InputStream recurso = getClass().getResourceAsStream(ruta);
-        if (recurso == null) {
-            Label sustituto = new Label("SPRITE\n" + carta.getNombre());
-            sustituto.setAlignment(Pos.CENTER);
-            sustituto.setStyle("-fx-text-fill: #f4f1de; -fx-font-size: 16px; -fx-font-weight: bold;"
-                    + "-fx-background-color: #355070; -fx-background-radius: 10;");
-            sustituto.setPrefSize(160, 105);
-            contenedor.getChildren().add(sustituto);
-            return contenedor;
-        }
-        ImageView imagen = new ImageView(new Image(recurso));
-        imagen.setFitWidth(175);
-        imagen.setFitHeight(120);
-        imagen.setPreserveRatio(true);
-        contenedor.getChildren().add(imagen);
+private StackPane crearSprite(Carta carta) {
+    StackPane contenedor = new StackPane();
+    contenedor.setPrefSize(180, 125);
+
+    if (carta == null) {
         return contenedor;
     }
+
+    String nombrePokemon = carta.getNombre();
+
+    // Nombre exacto del archivo PNG correspondiente a cada Pokemon
+    String archivoSprite;
+
+    switch (nombrePokemon) {
+        case "Bulbasaur":
+            archivoSprite = "Bulbasaur.png";
+            break;
+
+        case "Ivysaur":
+            archivoSprite = "Ivisaur.png";
+            break;
+
+        case "Venusaur":
+            archivoSprite = "Venasaur.png";
+            break;
+
+        case "Charmander":
+            archivoSprite = "Charmander.png";
+            break;
+
+        case "Charmeleon":
+            archivoSprite = "Charmeleon.png";
+            break;
+
+        case "Charizard":
+            archivoSprite = "Charizard.png";
+            break;
+
+        case "Squirtle":
+            archivoSprite = "Squirtle.png";
+            break;
+
+        case "Wartortle":
+            archivoSprite = "Wartortle.png";
+            break;
+
+        case "Blastoise":
+            archivoSprite = "Blastois.png";
+            break;
+
+        case "Pichu":
+            archivoSprite = "Pichu.png";
+            break;
+
+        case "Pikachu":
+            archivoSprite = "Pikachu.png";
+            break;
+
+        case "Raichu":
+            archivoSprite = "Raichu.png";
+            break;
+
+        case "Oddish":
+            archivoSprite = "Odysh.png";
+            break;
+
+        case "Gloom":
+            archivoSprite = "Gloom.png";
+            break;
+
+        case "Vileplume":
+            archivoSprite = "Vileplume.png";
+            break;
+
+        case "Magikarp":
+            archivoSprite = "Magikarp.png";
+            break;
+
+        case "Gyarados":
+            archivoSprite = "Gyarados.png";
+            break;
+
+        case "Pidgey":
+            archivoSprite = "Pidgey.png";
+            break;
+
+        case "Clefairy":
+            archivoSprite = "Clefa.png";
+            break;
+
+        case "Magmar":
+            archivoSprite = "Magmar.png";
+            break;
+
+        default:
+            archivoSprite = null;
+            break;
+    }
+
+    if (archivoSprite == null) {
+        Label sustituto = new Label("SPRITE\n" + nombrePokemon);
+        sustituto.setAlignment(Pos.CENTER);
+        sustituto.setStyle(
+                "-fx-text-fill: #f4f1de;" +
+                "-fx-font-size: 16px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-background-color: #355070;" +
+                "-fx-background-radius: 10;"
+        );
+        sustituto.setPrefSize(160, 105);
+        contenedor.getChildren().add(sustituto);
+        return contenedor;
+    }
+
+    String ruta = "/imagenes/sprites/" + archivoSprite;
+
+    java.io.InputStream recurso = getClass().getResourceAsStream(ruta);
+
+    if (recurso == null) {
+        Label sustituto = new Label("SPRITE\n" + nombrePokemon);
+        sustituto.setAlignment(Pos.CENTER);
+        sustituto.setStyle(
+                "-fx-text-fill: #f4f1de;" +
+                "-fx-font-size: 16px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-background-color: #355070;" +
+                "-fx-background-radius: 10;"
+        );
+        sustituto.setPrefSize(160, 105);
+        contenedor.getChildren().add(sustituto);
+        return contenedor;
+    }
+
+    ImageView imagen = new ImageView(new Image(recurso));
+    imagen.setFitWidth(175);
+    imagen.setFitHeight(120);
+    imagen.setPreserveRatio(true);
+
+    contenedor.getChildren().add(imagen);
+
+    return contenedor;
+}
 
     private VBox crearCartaTablero(Carta carta) {
         VBox visual = cartaVisual(carta, 155, 150);
@@ -420,15 +581,45 @@ public class VistaJuego {
         terminar.setOnAction(event -> terminarTurno());
         reiniciar.setOnAction(event -> mostrarConfiguracion());
 
-        HBox botones = new HBox(8, energiaActivo, energiaBanca, jugar, evolucionar,
-                retirar, atacar, terminar, reiniciar);
-        botones.setAlignment(Pos.CENTER);
-        energiaVisual = new HBox(6);
-        energiaVisual.setAlignment(Pos.CENTER);
-        VBox inferior = new VBox(8, new Label("Reserva de energia del turno:"), energiaVisual, botones);
-        inferior.setAlignment(Pos.CENTER);
-        inferior.setPadding(new Insets(10, 0, 0, 0));
-        return inferior;
+energiaVisual = new HBox(6);
+energiaVisual.setAlignment(Pos.CENTER);
+
+HBox botonesEnergia = new HBox(10);
+botonesEnergia.setAlignment(Pos.CENTER);
+botonesEnergia.getChildren().addAll(
+        energiaActivo,
+        energiaBanca
+);
+
+HBox botonesAcciones = new HBox(10);
+botonesAcciones.setAlignment(Pos.CENTER);
+botonesAcciones.getChildren().addAll(
+        jugar,
+        evolucionar,
+        retirar,
+        atacar,
+        terminar,
+        reiniciar
+);
+
+VBox botones = new VBox(10);
+botones.setAlignment(Pos.CENTER);
+botones.getChildren().addAll(
+        botonesEnergia,
+        botonesAcciones
+);
+
+VBox inferior = new VBox(
+        8,
+        new Label("Reserva de energia del turno:"),
+        energiaVisual,
+        botones
+);
+
+inferior.setAlignment(Pos.CENTER);
+inferior.setPadding(new Insets(10, 0, 0, 0));
+
+return inferior;
     }
 
     private void actualizarEnergiaVisual() {
