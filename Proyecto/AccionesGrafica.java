@@ -6,6 +6,7 @@ import java.util.Random;
 public class AccionesGrafica {
     private final GestorPartida gestorPartida;
     private final Random random;
+    private String ultimoResumenAtaque = "";
 
     public AccionesGrafica(GestorPartida gestorPartida, Random random) {
         this.gestorPartida = gestorPartida;
@@ -75,20 +76,81 @@ public class AccionesGrafica {
     public int atacar(Jugador atacante, Jugador defensor) {
         Carta pokemonAtacante = atacante.getActivo();
         Carta pokemonDefensor = defensor.getActivo();
-        if (pokemonAtacante == null || pokemonDefensor == null
-                || pokemonAtacante.getEnergias() < pokemonAtacante.getFase()) {
+        if (pokemonAtacante == null || pokemonDefensor == null) {
+            ultimoResumenAtaque = "Ambos jugadores necesitan un Pokemon activo.";
+            return -1;
+        }
+        if ("Paralisis".equals(pokemonAtacante.getEstado())
+                || "Congelacion".equals(pokemonAtacante.getEstado())) {
+            ultimoResumenAtaque = pokemonAtacante.getNombre() + " no puede atacar por su estado.";
+            return -1;
+        }
+        if (pokemonAtacante.getEnergias() < pokemonAtacante.getFase()) {
+            ultimoResumenAtaque = "Necesitas " + pokemonAtacante.getFase() + " energias para atacar.";
             return -1;
         }
 
         int danio = pokemonAtacante.getDanio();
-        if (tieneVentaja(pokemonAtacante.getTipo(), pokemonDefensor.getTipo())) danio += 10;
-        if (coincideCampo(pokemonAtacante.getTipo(), gestorPartida.campoActual())) danio += 10;
+        StringBuilder bonos = new StringBuilder();
+        if (tieneVentaja(pokemonAtacante.getTipo(), pokemonDefensor.getTipo())) {
+            danio += 10;
+            agregarBono(bonos, "ventaja elemental +10");
+        }
+        if (coincideCampo(pokemonAtacante.getTipo(), gestorPartida.campoActual())) {
+            danio += 10;
+            agregarBono(bonos, "terreno favorable +10");
+        }
+        if (tieneDesventaja(pokemonDefensor.getTipo(), gestorPartida.campoActual())) {
+            danio += 10;
+            agregarBono(bonos, "terreno desfavorable +10");
+        }
+        if (pokemonAtacante.esCarta("Charizard")) {
+            danio += 10;
+            agregarBono(bonos, "Llamarada intensa +10");
+        }
+        if (pokemonAtacante.esCarta("Blastoise") && pokemonAtacante.getEnergias() >= 1) {
+            danio += 10;
+            agregarBono(bonos, "Hidrobomba +10");
+        }
+        if (pokemonAtacante.esCarta("Pikachu") && random.nextInt(100) < 50) {
+            danio += 10;
+            agregarBono(bonos, "Impactrueno +10");
+        }
+        if (pokemonAtacante.esCarta("Raichu")) {
+            danio += 15;
+            agregarBono(bonos, "Impactrueno fuerte +15");
+        }
+        if (pokemonAtacante.esCarta("Gyarados")
+                && pokemonAtacante.getVida() <= pokemonAtacante.getVidaMaxima() / 2) {
+            danio += 15;
+            agregarBono(bonos, "Furia +15");
+        }
         pokemonAtacante.quitarEnergia(pokemonAtacante.getFase());
         pokemonDefensor.recibirDanio(danio);
         atacante.registrarJugada(pokemonAtacante);
         gestorPartida.registrar(atacante.getNombre() + " ataco con " + pokemonAtacante.getNombre()
                 + " por " + danio + " de dano.");
+        ultimoResumenAtaque = pokemonAtacante.getNombre() + " hizo " + danio + " de dano"
+                + (bonos.length() == 0 ? "." : " (" + bonos + ").");
+        if (pokemonAtacante.tieneAtaqueElemental() && random.nextInt(100) < 40) {
+            String estado = estadoDeTipo(pokemonAtacante.getTipo());
+            pokemonDefensor.aplicarEstado(estado);
+            ultimoResumenAtaque += " Aplico " + estado + ".";
+        }
         return danio;
+    }
+
+    public String procesarHabilidadesInicioTurno(Jugador jugador, Jugador rival) {
+        StringBuilder efectos = new StringBuilder();
+        procesarHabilidad(jugador.getActivo(), rival, efectos);
+        for (int i = 0; i < 3; i++) {
+            procesarHabilidad(jugador.getPokemonBanca(i), rival, efectos);
+        }
+        return efectos.toString();
+    }
+
+    public String getUltimoResumenAtaque() {
+        return ultimoResumenAtaque;
     }
 
     public Carta siguienteEvolucion(Carta pokemon) {
@@ -115,5 +177,39 @@ public class AccionesGrafica {
                 || (campo.contains("Pasto") && tipo.equals("Planta"))
                 || (campo.contains("Agua") && tipo.equals("Agua"))
                 || (campo.contains("Rayo") && tipo.equals("Rayo"));
+    }
+
+    private boolean tieneDesventaja(String tipo, String campo) {
+        if (campo.contains("Fuego")) return tipo.equals("Planta");
+        if (campo.contains("Pasto")) return tipo.equals("Agua");
+        if (campo.contains("Agua")) return tipo.equals("Fuego");
+        return campo.contains("Rayo") && tipo.equals("Agua");
+    }
+
+    private String estadoDeTipo(String tipo) {
+        if ("Fuego".equals(tipo)) return "Quemadura";
+        if ("Rayo".equals(tipo)) return "Paralisis";
+        if ("Agua".equals(tipo)) return "Congelacion";
+        return "Veneno";
+    }
+
+    private void procesarHabilidad(Carta carta, Jugador rival, StringBuilder efectos) {
+        if (carta == null || carta.getHabilidad() == null) return;
+        if (carta.esCarta("Venusaur")) {
+            carta.curar(10);
+            agregarBono(efectos, "Venusaur curo 10 de vida");
+        } else if (carta.esCarta("Vileplume") && rival.getActivo() != null) {
+            rival.getActivo().aplicarEstado("Veneno");
+            agregarBono(efectos, "Vileplume aplico Veneno");
+        } else if (carta.esCarta("Clefairy")) {
+            carta.curar(10);
+            carta.curarEstado();
+            agregarBono(efectos, "Clefairy uso Canto");
+        }
+    }
+
+    private void agregarBono(StringBuilder bonos, String bono) {
+        if (bonos.length() > 0) bonos.append(", ");
+        bonos.append(bono);
     }
 }

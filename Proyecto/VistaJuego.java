@@ -40,6 +40,7 @@ public class VistaJuego {
     private Label estado;
     private HBox energiaVisual;
     private ComboBox<String> selectorEvolucion;
+    private String mensajeAccion = "";
     private VBox tablero;
     private VBox detalle;
     private Jugador jugadorSeleccion;
@@ -293,26 +294,47 @@ public class VistaJuego {
         raiz.setLeft(crearAcciones());
         raiz.setCenter(tableroDesplazable);
         raiz.setRight(detalle);
+        mensajeAccion = acciones.procesarHabilidadesInicioTurno(turno, defensor);
         refrescar();
         stage.setScene(new Scene(raiz));
     }
 
     private void refrescar() {
+        actualizarFondoTerreno();
         tablero.getChildren().clear();
+        Region separador = new Region();
+        separador.setPrefHeight(6);
+        separador.setMaxWidth(Double.MAX_VALUE);
+        separador.setStyle("-fx-background-color: #000000;");
         tablero.getChildren().addAll(titulo("Campo: " + gestor.campoActual()),
-                crearZonaJugador(rival, false), crearZonaJugador(jugador, true), estado);
+            crearZonaJugador(rival, false), separador, crearZonaJugador(jugador, true), estado);
         estado.setText("Turno " + numeroTurno + " de " + turno.getNombre()
             + " | Energia: " + energiaDisponible
-                + " | Ataque: " + (ataqueUsado ? "usado" : "disponible"));
+                + " | Ataque: " + (ataqueUsado ? "usado" : "disponible")
+                + (mensajeAccion.isEmpty() ? "" : " | " + mensajeAccion));
         actualizarEnergiaVisual();
+    }
+
+    private void actualizarFondoTerreno() {
+        String archivo = switch (gestor.campoActual()) {
+            case "Llanura de Fuego" -> "Llanura de fuego.png";
+            case "Bosque de Pasto" -> "Bosque de pasto.png";
+            case "Oceano de Agua" -> "Oceano de agua.png";
+            case "Valle de Rayo" -> "Valle de rayo.png";
+            default -> null;
+        };
+        java.net.URL recurso = archivo == null ? null
+                : getClass().getResource("/imagenes/terrenos/" + archivo);
+        tablero.setPadding(new Insets(16));
+        tablero.setStyle(recurso == null ? "-fx-background-color: #183642;"
+                : "-fx-background-image: url('" + recurso.toExternalForm()
+                        + "'); -fx-background-size: cover; -fx-background-position: center;");
     }
 
 private VBox crearZonaJugador(Jugador jugadorVista, boolean esJugador) {
     VBox zona = new VBox(6);
     zona.setPadding(new Insets(8));
-    zona.setStyle(esJugador
-            ? "-fx-background-color: #2f6690; -fx-background-radius: 8;"
-            : "-fx-background-color: #7f5539; -fx-background-radius: 8;");
+    zona.setStyle("-fx-background-color: transparent;");
 
     Label nombre = new Label(
             jugadorVista.getNombre() + " | Puntos: " + jugadorVista.getPuntos()
@@ -491,7 +513,7 @@ private StackPane crearSprite(Carta carta) {
 
     String ruta = "/imagenes/sprites/" + archivoSprite;
 
-    java.io.InputStream recurso = getClass().getResourceAsStream(ruta);
+    java.net.URL recurso = getClass().getResource(ruta);
 
     if (recurso == null) {
         Label sustituto = new Label("SPRITE\n" + nombrePokemon);
@@ -508,7 +530,7 @@ private StackPane crearSprite(Carta carta) {
         return contenedor;
     }
 
-    ImageView imagen = new ImageView(new Image(recurso));
+    ImageView imagen = new ImageView(new Image(recurso.toExternalForm()));
     imagen.setFitWidth(175);
     imagen.setFitHeight(120);
     imagen.setPreserveRatio(true);
@@ -645,10 +667,10 @@ private StackPane crearSprite(Carta carta) {
     }
 
     private ImageView crearIconoEnergia(double tamano) {
-        java.io.InputStream recurso = getClass().getResourceAsStream("/imagenes/energia.png");
+        java.net.URL recurso = getClass().getResource("/imagenes/energia.png");
         ImageView icono;
         if (recurso != null) {
-            icono = new ImageView(new Image(recurso));
+            icono = new ImageView(new Image(recurso.toExternalForm()));
             icono.setPreserveRatio(true);
             icono.setFitWidth(tamano);
             icono.setFitHeight(tamano);
@@ -765,16 +787,17 @@ private StackPane crearSprite(Carta carta) {
         if (ataqueUsado || atacante == null || objetivo == null) return;
         int danio = acciones.atacar(turno, defensor);
         if (danio < 0) {
-            estado.setText("Necesitas " + atacante.getFase() + " energias para atacar.");
+            mensajeAccion = acciones.getUltimoResumenAtaque();
+            refrescar();
             return;
         }
         ataqueUsado = true;
-        estado.setText(atacante.getNombre() + " hizo " + danio + " de dano.");
+        mensajeAccion = acciones.getUltimoResumenAtaque();
         if (objetivo.estaFueraDeCombate()) {
             turno.sumarPunto();
             defensor.sacarActivo();
             prepararCampo(defensor, numeroTurno);
-            estado.setText("Punto para " + turno.getNombre() + ".");
+            mensajeAccion += " Punto para " + turno.getNombre() + ".";
         }
         refrescar();
     }
@@ -788,8 +811,11 @@ private StackPane crearSprite(Carta carta) {
         energiaUsada = false;
         energiaDisponible = 1;
         ataqueUsado = false;
-        turno.robarCartaAMano();
-        turno.procesarEstadoInicioTurno(random);
+        boolean roboCarta = turno.robarCartaAMano();
+        String efectoEstado = turno.procesarEstadoInicioTurno(random);
+        String habilidades = acciones.procesarHabilidadesInicioTurno(turno, defensor);
+        mensajeAccion = (roboCarta ? "Robo una carta. " : "") + efectoEstado
+            + (habilidades.isEmpty() ? "" : " " + habilidades + ".");
         refrescar();
     }
 
