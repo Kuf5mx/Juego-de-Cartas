@@ -160,7 +160,7 @@ public class Jugador {
         }
 
         if (pokemon == null) {
-            throw new ListaVaciaException("No hay Pokemones disponibles en el mazo. Se devuelve la Pokeball.");
+            throw new ListaVaciaException("No quedan Pokemones de primera fase en el mazo. La Pokeball se descarta.");
         }
         mano.agregar(pokemon);
         return true;

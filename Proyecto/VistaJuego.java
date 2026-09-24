@@ -71,7 +71,9 @@ public class VistaJuego {
                 new Label("Nombre del jugador 1"), nombre1,
                 new Label("Nombre del jugador 2"), nombre2);
         HBox editores = new HBox(18, editor1, editor2);
-        VBox contenido = new VBox(18, titulo("Preparar partida"), nombres, editores, comenzar);
+        Label marca = new Label("Tecmimon");
+        marca.setStyle("-fx-font-size: 38px; -fx-font-weight: bold; -fx-text-fill: #ffd166;");
+        VBox contenido = new VBox(18, marca, titulo("Preparar partida"), nombres, editores, comenzar);
         contenido.setAlignment(Pos.TOP_CENTER);
         contenido.setPadding(new Insets(30));
         contenido.setStyle("-fx-background-color: #183642;");
