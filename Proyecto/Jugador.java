@@ -6,6 +6,7 @@ import java.util.Random;
  */
 public class Jugador {
 
+    private static final int LIMITE_MANO = 7;
     private String nombre;
     private Pila mazo;
     private Pila descarte;
@@ -73,7 +74,7 @@ public class Jugador {
     }
 
     public boolean robarCartaAMano() {
-        if (!mazo.estaVacia()) {
+        if (mano.size() < LIMITE_MANO && !mazo.estaVacia()) {
             Carta carta = mazo.desapilar();
             if (carta != null) {
                 mano.agregar(carta);

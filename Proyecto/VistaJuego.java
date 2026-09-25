@@ -42,6 +42,7 @@ public class VistaJuego {
     private Label estado;
     private HBox energiaVisual;
     private ComboBox<String> selectorEvolucion;
+    private ComboBox<String> selectorRetirada;
     private String mensajeAccion = "";
     private VBox tablero;
     private VBox detalle;
@@ -773,7 +774,10 @@ private StackPane crearSprite(Carta carta) {
         selectorEvolucion.getItems().addAll("Activo", "Banca 1", "Banca 2", "Banca 3");
         selectorEvolucion.getSelectionModel().selectFirst();
         Button evolucionar = new Button("Evolucionar objetivo");
-        Button retirar = new Button("Retirar con banca 1");
+        selectorRetirada = new ComboBox<>();
+        selectorRetirada.getItems().addAll("Banca 1", "Banca 2", "Banca 3");
+        selectorRetirada.getSelectionModel().selectFirst();
+        Button retirar = new Button("Retirar activo");
         Button atacar = new Button("Atacar");
         Button terminar = new Button("Terminar turno");
         Button reiniciar = new Button("Nueva partida");
@@ -804,10 +808,11 @@ private StackPane crearSprite(Carta carta) {
     botones.add(jugar, 0, 4);
     botones.add(selectorEvolucion, 0, 5);
     botones.add(evolucionar, 0, 6);
-    botones.add(retirar, 0, 7);
-    botones.add(atacar, 0, 8);
-    botones.add(terminar, 0, 9);
-    botones.add(reiniciar, 0, 10);
+    botones.add(selectorRetirada, 0, 7);
+    botones.add(retirar, 0, 8);
+    botones.add(atacar, 0, 9);
+    botones.add(terminar, 0, 10);
+    botones.add(reiniciar, 0, 11);
 
     for (Button boton : new Button[] {energiaActivo, energiaBanca1, energiaBanca2,
         energiaBanca3, jugar, evolucionar, retirar, atacar, terminar, reiniciar, historial}) {
@@ -966,7 +971,8 @@ private StackPane crearSprite(Carta carta) {
 
     private void ejecutarRetirada() {
         if (partidaTerminada) return;
-        if (acciones.retirar(turno, 0)) estado.setText("Retirada realizada.");
+        int bancaDestino = selectorRetirada == null ? -1 : selectorRetirada.getSelectionModel().getSelectedIndex();
+        if (acciones.retirar(turno, bancaDestino)) estado.setText("Retirada realizada.");
         else estado.setText("Necesitas banca y energia suficiente para retirarte.");
         refrescar();
     }
