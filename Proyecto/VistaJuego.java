@@ -1072,6 +1072,11 @@ private StackPane crearSprite(Carta carta) {
         ataqueUsado = false;
         boolean roboCarta = turno.robarCartaAMano();
         String efectoEstado = turno.procesarEstadoInicioTurno(random);
+        if (turno.activoFueraDeCombate()) {
+            mensajeAccion = (roboCarta ? "Robo una carta. " : "") + efectoEstado;
+            resolverDerrotaVisual(turno, defensor);
+            return;
+        }
         String habilidades = acciones.procesarHabilidadesInicioTurno(turno, defensor);
         mensajeAccion = (roboCarta ? "Robo una carta. " : "") + efectoEstado
             + (habilidades.isEmpty() ? "" : " " + habilidades + ".");
