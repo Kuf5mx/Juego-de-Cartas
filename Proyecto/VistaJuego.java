@@ -993,9 +993,8 @@ private StackPane crearSprite(Carta carta) {
         if (objetivo.estaFueraDeCombate()) {
             turno.sumarPunto();
             mensajeAccion += " Punto para " + turno.getNombre() + ".";
-            refrescar();
             mostrarNotificacionesEstado();
-            Platform.runLater(() -> resolverDerrotaVisual(defensor, turno));
+            resolverDerrotaVisual(defensor, turno);
             return;
         }
         refrescar();
