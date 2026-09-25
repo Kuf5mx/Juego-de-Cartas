@@ -93,7 +93,7 @@ public class Carta {
     }
 
     public void establecerEnergia(int cantidad) { energias = Math.max(0, cantidad); }
-    public boolean puedeEvolucionar(int turnoActual) { return turnoActual > turnoEvolucion; }
+    public boolean puedeEvolucionar(int turnoActual) { return turnoActual > turnoEvolucion + 2; }
     public void registrarEvolucion(int turno) { turnoEvolucion = turno; estado = "Ninguno"; }
     public boolean tieneEstado() { return !"Ninguno".equals(estado); }
     public void aplicarEstado(String nuevoEstado) { if (!tieneEstado()) estado = nuevoEstado; }
