@@ -6,6 +6,7 @@ import java.util.Random;
  */
 public class Jugador {
 
+    private static final int LIMITE_MANO = 7;
     private String nombre;
     private Pila mazo;
     private Pila descarte;
@@ -73,7 +74,7 @@ public class Jugador {
     }
 
     public boolean robarCartaAMano() {
-        if (!mazo.estaVacia()) {
+        if (mano.size() < LIMITE_MANO && !mazo.estaVacia()) {
             Carta carta = mazo.desapilar();
             if (carta != null) {
                 mano.agregar(carta);
@@ -84,16 +85,42 @@ public class Jugador {
     }
 
     public void robarCartasIniciales(int cantidad) {
-        int pokemonesEnMano = 0;
         for (int i = 0; i < cantidad; i++) {
             if (!robarCartaAMano()) break;
-            Carta ultima = mano.obtenerPorIndice(mano.size() - 1);
-            if (ultima != null && ultima.esPokemon() && ultima.getFase() == 1) pokemonesEnMano++;
         }
-        while (pokemonesEnMano < 2 && robarCartaAMano()) {
-            Carta ultima = mano.obtenerPorIndice(mano.size() - 1);
-            if (ultima != null && ultima.esPokemon() && ultima.getFase() == 1) pokemonesEnMano++;
+        if (!tienePokemonBasicoEnMano()) {
+            reemplazarUltimaCartaInicialPorBasico();
         }
+    }
+
+    private boolean tienePokemonBasicoEnMano() {
+        for (int i = 0; i < getTamanoMano(); i++) {
+            Carta carta = obtenerCartaDeMano(i);
+            if (carta != null && carta.esPokemon() && carta.getFase() == 1) return true;
+        }
+        return false;
+    }
+
+    private void reemplazarUltimaCartaInicialPorBasico() {
+        if (getTamanoMano() == 0) return;
+        Carta reemplazada = sacarCartaDeMano(getTamanoMano() - 1);
+        Pila temporal = new Pila(30);
+        Carta basico = null;
+        while (!mazo.estaVacia()) {
+            Carta carta = mazo.desapilar();
+            if (carta != null && carta.esPokemon() && carta.getFase() == 1) {
+                basico = carta;
+                break;
+            }
+            temporal.apilar(carta);
+        }
+        while (!temporal.estaVacia()) mazo.apilar(temporal.desapilar());
+        if (basico == null) {
+            mano.agregar(reemplazada);
+            return;
+        }
+        mano.agregar(basico);
+        mazo.apilar(reemplazada);
     }
 
     public void elegirCampoInicial(Scanner scanner) {
@@ -160,7 +187,7 @@ public class Jugador {
         }
 
         if (pokemon == null) {
-            throw new ListaVaciaException("No hay Pokemones disponibles en el mazo. Se devuelve la Pokeball.");
+            throw new ListaVaciaException("No quedan Pokemones de primera fase en el mazo. La Pokeball se descarta.");
         }
         mano.agregar(pokemon);
         return true;
@@ -386,6 +413,41 @@ public class Jugador {
         Carta carta = activo;
         activo = null;
         return carta;
+    }
+
+    public boolean promoverDesdeBanca(int indice) {
+        if (indice < 0 || indice >= banca.length || banca[indice] == null || activo != null) return false;
+        activo = banca[indice];
+        banca[indice] = null;
+        return true;
+    }
+
+    public boolean promoverDesdeMano(int indice, int turno) {
+        Carta carta = obtenerCartaDeMano(indice);
+        if (activo != null || carta == null || !carta.esPokemon() || carta.getFase() != 1) return false;
+        carta = sacarCartaDeMano(indice);
+        carta.prepararParaTablero(turno);
+        activo = carta;
+        return true;
+    }
+
+    public boolean promoverBasicoDelMazo(int turno) {
+        if (activo != null) return false;
+        Pila temporal = new Pila(30);
+        Carta basico = null;
+        while (!mazo.estaVacia()) {
+            Carta carta = mazo.desapilar();
+            if (carta != null && carta.esPokemon() && carta.getFase() == 1) {
+                basico = carta;
+                break;
+            }
+            temporal.apilar(carta);
+        }
+        while (!temporal.estaVacia()) mazo.apilar(temporal.desapilar());
+        if (basico == null) return false;
+        basico.prepararParaTablero(turno);
+        activo = basico;
+        return true;
     }
 
     public boolean tienePokemonDisponible() {

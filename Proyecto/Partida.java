@@ -9,6 +9,7 @@ import java.util.Scanner;
 public class Partida {
     private static final int MAX_CARTAS_MAZO = 15;
     private final Random random = new Random();
+    private final int desplazamientoCampo = random.nextInt(4);
     private final List<String> resumenPartida = new ArrayList<>();
     private boolean partidaTerminada;
     private Jugador ganadorPartida;
@@ -42,7 +43,7 @@ public class Partida {
             Jugador actual = turnos.desencolar();
             if (actual == null) break;
             Jugador rival = actual == jugador1 ? jugador2 : jugador1;
-            String campoActual = CAMPOS[(turno - 1) / 3 % CAMPOS.length];
+            String campoActual = CAMPOS[(desplazamientoCampo + (turno - 1) / 3) % CAMPOS.length];
             jugarTurno(scanner, actual, rival, turno, campoActual);
             if (actual.getPuntos() < 3 && rival.getPuntos() < 3) turnos.encolar(actual);
             turno++;

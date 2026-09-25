@@ -1,5 +1,8 @@
+import javafx.application.Application;
+
 public class Main {
+
     public static void main(String[] args) {
-        new ControladorJuego().iniciar();
+        Application.launch(AplicacionTecmimon.class, args);
     }
 }
