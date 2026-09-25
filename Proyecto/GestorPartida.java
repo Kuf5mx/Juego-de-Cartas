@@ -1,4 +1,5 @@
 import java.util.Map;
+import java.util.Random;
 import java.util.Scanner;
 
 /**
@@ -18,6 +19,8 @@ public class GestorPartida {
         campos = new ListaCircular();
         for (int i = CAMPOS.length - 1; i >= 0; i--) campos.agregar(CAMPOS[i]);
         campos.siguienteCampo();
+        int saltosIniciales = new Random().nextInt(CAMPOS.length);
+        for (int i = 0; i < saltosIniciales; i++) campos.siguienteCampo();
 
         evoluciones = construirArbolEvolucion(catalogo);
         historial = new ListaDoble();

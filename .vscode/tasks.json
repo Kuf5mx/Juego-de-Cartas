@@ -1,0 +1,19 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Ejecutar Juego JavaFX",
+            "type": "shell",
+            "command": "mvn javafx:run",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "focus": false
+            },
+            "problemMatcher": []
+        }
+    ]
+}
