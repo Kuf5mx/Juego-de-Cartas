@@ -4,6 +4,7 @@ AccionesGrafica.class
 ControladorTurno.class
 ListaSimple.class
 VistaJuego.class
+AplicacionTecmimon.class
 Partida.class
 MotorTurno.class
 Pila.class
