@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -7,6 +9,7 @@ public class AccionesGrafica {
     private final GestorPartida gestorPartida;
     private final Random random;
     private String ultimoResumenAtaque = "";
+    private final List<String> notificacionesEstado = new ArrayList<>();
 
     public AccionesGrafica(GestorPartida gestorPartida, Random random) {
         this.gestorPartida = gestorPartida;
@@ -104,6 +107,15 @@ public class AccionesGrafica {
             danio += 10;
             agregarBono(bonos, "terreno desfavorable +10");
         }
+        int apoyosBanca = 0;
+        for (int i = 0; i < 3; i++) {
+            if (bancaPotenciaActivo(atacante, i)) apoyosBanca++;
+        }
+        if (apoyosBanca > 0) {
+            int bonoBanca = apoyosBanca * 10;
+            danio += bonoBanca;
+            agregarBono(bonos, "apoyo de banca +" + bonoBanca);
+        }
         if (pokemonAtacante.esCarta("Charizard")) {
             danio += 10;
             agregarBono(bonos, "Llamarada intensa +10");
@@ -125,7 +137,6 @@ public class AccionesGrafica {
             danio += 15;
             agregarBono(bonos, "Furia +15");
         }
-        pokemonAtacante.quitarEnergia(pokemonAtacante.getFase());
         pokemonDefensor.recibirDanio(danio);
         atacante.registrarJugada(pokemonAtacante);
         gestorPartida.registrar(atacante.getNombre() + " ataco con " + pokemonAtacante.getNombre()
@@ -134,8 +145,9 @@ public class AccionesGrafica {
                 + (bonos.length() == 0 ? "." : " (" + bonos + ").");
         if (pokemonAtacante.tieneAtaqueElemental() && random.nextInt(100) < 40) {
             String estado = estadoDeTipo(pokemonAtacante.getTipo());
-            pokemonDefensor.aplicarEstado(estado);
-            ultimoResumenAtaque += " Aplico " + estado + ".";
+            if (aplicarEstado(pokemonDefensor, estado)) {
+                ultimoResumenAtaque += " Aplico " + estado + ".";
+            }
         }
         return danio;
     }
@@ -153,6 +165,12 @@ public class AccionesGrafica {
         return ultimoResumenAtaque;
     }
 
+    public List<String> consumirNotificacionesEstado() {
+        List<String> notificaciones = new ArrayList<>(notificacionesEstado);
+        notificacionesEstado.clear();
+        return notificaciones;
+    }
+
     public Carta siguienteEvolucion(Carta pokemon) {
         return pokemon == null ? null : gestorPartida.siguienteEvolucion(pokemon.getNombre());
     }
@@ -163,6 +181,12 @@ public class AccionesGrafica {
 
     public String campoActual() {
         return gestorPartida.campoActual();
+    }
+
+    public boolean bancaPotenciaActivo(Jugador jugador, int indiceBanca) {
+        Carta activo = jugador.getActivo();
+        Carta banca = jugador.getPokemonBanca(indiceBanca);
+        return activo != null && banca != null && tieneVentaja(activo.getTipo(), banca.getTipo());
     }
 
     private boolean tieneVentaja(String atacante, String defensor) {
@@ -199,8 +223,9 @@ public class AccionesGrafica {
             carta.curar(10);
             agregarBono(efectos, "Venusaur curo 10 de vida");
         } else if (carta.esCarta("Vileplume") && rival.getActivo() != null) {
-            rival.getActivo().aplicarEstado("Veneno");
-            agregarBono(efectos, "Vileplume aplico Veneno");
+            if (aplicarEstado(rival.getActivo(), "Veneno")) {
+                agregarBono(efectos, "Vileplume aplico Veneno");
+            }
         } else if (carta.esCarta("Clefairy")) {
             carta.curar(10);
             carta.curarEstado();
@@ -211,5 +236,12 @@ public class AccionesGrafica {
     private void agregarBono(StringBuilder bonos, String bono) {
         if (bonos.length() > 0) bonos.append(", ");
         bonos.append(bono);
+    }
+
+    private boolean aplicarEstado(Carta carta, String estado) {
+        if (carta == null || carta.tieneEstado()) return false;
+        carta.aplicarEstado(estado);
+        notificacionesEstado.add(carta.getNombre() + " recibio " + estado + ".");
+        return true;
     }
 }

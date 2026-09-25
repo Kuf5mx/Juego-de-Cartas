@@ -10,6 +10,7 @@ import javafx.scene.control.*;
 import javafx.scene.image.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import javafx.application.Platform;
 
 /**
  * AQUI DEBES ESTAR: tablero visual del juego.
@@ -33,6 +34,7 @@ public class VistaJuego {
     private AccionesGrafica acciones;
     private Jugador turno;
     private Jugador defensor;
+    private boolean partidaTerminada;
     private int numeroTurno;
     private boolean energiaUsada;
     private int energiaDisponible;
@@ -67,24 +69,41 @@ public class VistaJuego {
         comenzar.setDefaultButton(true);
         comenzar.setOnAction(event -> iniciarPartida(nombre1.getText(), nombre2.getText()));
 
-        VBox nombres = new VBox(8,
-                new Label("Nombre del jugador 1"), nombre1,
-                new Label("Nombre del jugador 2"), nombre2);
+        Label etiquetaJugador1 = new Label("Nombre del jugador 1");
+        Label etiquetaJugador2 = new Label("Nombre del jugador 2");
+        etiquetaJugador1.setStyle("-fx-text-fill: white;");
+        etiquetaJugador2.setStyle("-fx-text-fill: white;");
+        VBox nombres = new VBox(8, etiquetaJugador1, nombre1, etiquetaJugador2, nombre2);
         HBox editores = new HBox(18, editor1, editor2);
-        Label marca = new Label("Tecmimon");
-        marca.setStyle("-fx-font-size: 38px; -fx-font-weight: bold; -fx-text-fill: #ffd166;");
-        VBox contenido = new VBox(18, marca, titulo("Preparar partida"), nombres, editores, comenzar);
+        Label tituloPreparacion = titulo("Preparar partida");
+        tituloPreparacion.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #1a1a1a;");
+        VBox contenido = new VBox(18, tituloPreparacion, nombres, editores, comenzar);
         contenido.setAlignment(Pos.TOP_CENTER);
         contenido.setPadding(new Insets(30));
-        contenido.setStyle("-fx-background-color: #183642;");
+        java.net.URL portada = getClass().getResource("/imagenes/TecmiMon.png");
+        ImageView cabecera = portada == null ? new ImageView() : new ImageView(new Image(portada.toExternalForm()));
+        cabecera.setFitWidth(500);
+        cabecera.setFitHeight(250);
+        cabecera.setPreserveRatio(true);
+        HBox encabezado = new HBox(cabecera);
+        encabezado.setAlignment(Pos.CENTER);
+        VBox raiz = new VBox(12, encabezado, contenido);
+        raiz.setAlignment(Pos.TOP_CENTER);
+        java.net.URL fondoPortada = getClass().getResource("/imagenes/Portada.png");
+        raiz.setStyle(fondoPortada == null ? "-fx-background-color: #050505;"
+            : "-fx-background-image: url('" + fondoPortada.toExternalForm()
+                + "'); -fx-background-size: cover; -fx-background-position: center;");
         stage.setTitle("Juego de Cartas Pokemon");
-        stage.setScene(new Scene(contenido));
+        stage.setScene(new Scene(raiz));
         stage.show();
     }
 
     private VBox crearEditorMazo(String encabezado, List<String> mazo) {
         ComboBox<String> selector = new ComboBox<>();
-        selector.getItems().addAll(CARTAS_INICIALES);
+        List<String> opciones = new ArrayList<>(catalogo.keySet());
+        Collections.sort(opciones);
+        opciones.addAll(List.of("Pocion", "Superpocion", "Pokeball", "Caramelo Raro"));
+        selector.getItems().addAll(opciones);
         selector.getSelectionModel().selectFirst();
         ListView<String> lista = new ListView<>();
         lista.setPrefHeight(250);
@@ -128,7 +147,7 @@ public class VistaJuego {
 
     private void iniciarPartida(String nombre1, String nombre2) {
         if (!mazoValido(mazoJugador1) || !mazoValido(mazoJugador2)) {
-            alerta("Cada jugador necesita un mazo de 15 cartas y al menos 4 Pokemon.");
+            alerta("Cada jugador necesita 15 cartas, al menos 4 Pokemon y un Pokemon basico.");
             return;
         }
         jugador = crearJugador(nombre1.trim().isEmpty() ? "Jugador 1" : nombre1.trim());
@@ -173,7 +192,16 @@ public class VistaJuego {
     }
 
     private boolean mazoValido(List<String> mazo) {
-        return mazo.size() == 15 && contarPokemones(mazo) >= 4;
+        return mazo.size() == 15 && contarPokemones(mazo) >= 4 && contarBasicos(mazo) >= 1;
+    }
+
+    private int contarBasicos(List<String> mazo) {
+        int total = 0;
+        for (String nombre : mazo) {
+            Carta carta = cartaPorNombre(nombre);
+            if (carta.esPokemon() && carta.getFase() == 1) total++;
+        }
+        return total;
     }
 
     private void mostrarSeleccionInicial(Jugador jugadorActual) {
@@ -264,6 +292,7 @@ public class VistaJuego {
             energiaUsada = false;
             energiaDisponible = 1;
             ataqueUsado = false;
+            partidaTerminada = false;
             construirTablero();
         }
     }
@@ -285,8 +314,8 @@ public class VistaJuego {
         tablero = new VBox(10);
         detalle = new VBox(8);
         detalle.setPadding(new Insets(12));
-        detalle.setPrefWidth(250);
-        detalle.setStyle("-fx-background-color: #f4f1de; -fx-background-radius: 8;");
+        detalle.setPrefWidth(350);
+        StackPane panelDetalle = crearPanelPokedex(detalle, "/imagenes/Pokedex-2.png");
         estado = new Label();
         estado.setStyle("-fx-text-fill: #f4f1de; -fx-font-size: 14px;");
         ScrollPane tableroDesplazable = new ScrollPane(tablero);
@@ -295,10 +324,11 @@ public class VistaJuego {
         tableroDesplazable.setStyle("-fx-background: #183642; -fx-background-color: #183642;");
         raiz.setLeft(crearAcciones());
         raiz.setCenter(tableroDesplazable);
-        raiz.setRight(detalle);
+        raiz.setRight(panelDetalle);
         mensajeAccion = acciones.procesarHabilidadesInicioTurno(turno, defensor);
         refrescar();
         stage.setScene(new Scene(raiz));
+        Platform.runLater(this::mostrarNotificacionesEstado);
     }
 
     private void refrescar() {
@@ -309,7 +339,7 @@ public class VistaJuego {
         separador.setMaxWidth(Double.MAX_VALUE);
         separador.setStyle("-fx-background-color: #000000;");
         tablero.getChildren().addAll(titulo("Campo: " + gestor.campoActual()),
-            crearZonaJugador(rival, false), separador, crearZonaJugador(jugador, true), estado);
+            crearZonaJugador(defensor, false), separador, crearZonaJugador(turno, true), estado);
         estado.setText("Turno " + numeroTurno + " de " + turno.getNombre()
             + " | Energia: " + energiaDisponible
                 + " | Ataque: " + (ataqueUsado ? "usado" : "disponible")
@@ -344,6 +374,8 @@ private VBox crearZonaJugador(Jugador jugadorVista, boolean esJugador) {
     nombre.setStyle(
             "-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;"
     );
+        Label indicadorTerreno = crearIndicadorTerreno(jugadorVista);
+        Label indicadorVentaja = crearIndicadorVentaja(jugadorVista);
 
     HBox banca = new HBox(14);
     banca.setAlignment(Pos.CENTER);
@@ -353,6 +385,7 @@ private VBox crearZonaJugador(Jugador jugadorVista, boolean esJugador) {
                 crearCartaTablero(jugadorVista.getPokemonBanca(i))
         );
     }
+    HBox conexionesBanca = crearConexionesBanca(jugadorVista);
 
     HBox activo = new HBox(crearEspacioActivo(jugadorVista));
     activo.setAlignment(Pos.CENTER);
@@ -362,8 +395,11 @@ private VBox crearZonaJugador(Jugador jugadorVista, boolean esJugador) {
         // Activo arriba y banca abajo.
         zona.getChildren().addAll(
                 nombre,
+            indicadorTerreno,
+                indicadorVentaja,
                 new Label("ACTIVO"),
                 activo,
+                conexionesBanca,
                 new Label("BANCA"),
                 banca
         );
@@ -376,8 +412,11 @@ private VBox crearZonaJugador(Jugador jugadorVista, boolean esJugador) {
         // Banca arriba y activo abajo.
         zona.getChildren().addAll(
                 nombre,
+            indicadorTerreno,
+                indicadorVentaja,
                 new Label("BANCA"),
                 banca,
+                conexionesBanca,
                 new Label("ACTIVO"),
                 activo
         );
@@ -385,6 +424,68 @@ private VBox crearZonaJugador(Jugador jugadorVista, boolean esJugador) {
 
     return zona;
 }
+
+    private HBox crearConexionesBanca(Jugador jugadorVista) {
+        HBox conexiones = new HBox(14);
+        conexiones.setAlignment(Pos.CENTER);
+        for (int i = 0; i < 3; i++) {
+            StackPane espacio = new StackPane();
+            espacio.setPrefSize(155, 24);
+            if (acciones.bancaPotenciaActivo(jugadorVista, i)) {
+                Region linea = new Region();
+                linea.setPrefSize(5, 24);
+                linea.setMaxSize(5, 24);
+                linea.setStyle("-fx-background-color: #4cff79;"
+                        + "-fx-effect: dropshadow(gaussian, #4cff79, 12, 0.8, 0, 0);");
+                espacio.getChildren().add(linea);
+            }
+            conexiones.getChildren().add(espacio);
+        }
+        return conexiones;
+    }
+
+    private Label crearIndicadorTerreno(Jugador jugadorVista) {
+        Carta activo = jugadorVista.getActivo();
+        if (activo == null) return new Label();
+
+        String campo = gestor.campoActual();
+        boolean favorable = (campo.contains("Fuego") && "Fuego".equals(activo.getTipo()))
+                || (campo.contains("Pasto") && "Planta".equals(activo.getTipo()))
+                || (campo.contains("Agua") && "Agua".equals(activo.getTipo()))
+                || (campo.contains("Rayo") && "Rayo".equals(activo.getTipo()));
+        boolean desfavorable = (campo.contains("Fuego") && "Planta".equals(activo.getTipo()))
+                || (campo.contains("Pasto") && "Agua".equals(activo.getTipo()))
+                || (campo.contains("Agua") && "Fuego".equals(activo.getTipo()))
+                || (campo.contains("Rayo") && "Agua".equals(activo.getTipo()));
+        if (favorable) {
+            Label indicador = new Label("↑ Terreno favorable: +10 daño");
+            indicador.setStyle("-fx-text-fill: #4cff79; -fx-font-weight: bold;");
+            return indicador;
+        }
+        if (desfavorable) {
+            Label indicador = new Label("↓ Terreno desfavorable: rival +10 daño");
+            indicador.setStyle("-fx-text-fill: #ff6b6b; -fx-font-weight: bold;");
+            return indicador;
+        }
+        return new Label();
+    }
+
+    private Label crearIndicadorVentaja(Jugador jugadorVista) {
+        Jugador oponente = jugadorVista == turno ? defensor : turno;
+        Carta activo = jugadorVista.getActivo();
+        Carta activoRival = oponente == null ? null : oponente.getActivo();
+        if (activo == null || activoRival == null) return new Label();
+
+        boolean ventaja = ("Planta".equals(activo.getTipo()) && "Agua".equals(activoRival.getTipo()))
+                || ("Agua".equals(activo.getTipo()) && "Fuego".equals(activoRival.getTipo()))
+                || ("Fuego".equals(activo.getTipo()) && "Planta".equals(activoRival.getTipo()))
+                || ("Rayo".equals(activo.getTipo()) && "Agua".equals(activoRival.getTipo()));
+        if (!ventaja) return new Label();
+
+        Label indicador = new Label("↑ Ventaja elemental: +10 daño");
+        indicador.setStyle("-fx-text-fill: #4cff79; -fx-font-weight: bold;");
+        return indicador;
+    }
 
     private VBox crearEspacioActivo(Jugador propietario) {
         Carta carta = propietario.getActivo();
@@ -395,7 +496,15 @@ private VBox crearZonaJugador(Jugador jugadorVista, boolean esJugador) {
         Label etiqueta = new Label("ACTIVO");
         etiqueta.setStyle("-fx-text-fill: #ffd166; -fx-font-weight: bold;");
         espacio.getChildren().add(0, etiqueta);
-        if (carta != null) espacio.setOnMouseClicked(event -> mostrarDetalle(carta));
+        if (carta != null) {
+            espacio.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2) {
+                    mostrarDatosCompletos(carta);
+                } else {
+                    mostrarDetalle(carta);
+                }
+            });
+        }
         return espacio;
     }
 
@@ -547,7 +656,15 @@ private StackPane crearSprite(Carta carta) {
         if (carta != null && carta == turno.getActivo()) {
             visual.setStyle(visual.getStyle() + "-fx-border-color: #ffd166; -fx-border-width: 4;");
         }
-        if (carta != null) visual.setOnMouseClicked(event -> mostrarDetalle(carta));
+        if (carta != null) {
+            visual.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2) {
+                    mostrarDatosCompletos(carta);
+                } else {
+                    mostrarDetalle(carta);
+                }
+            });
+        }
         return visual;
     }
 
@@ -562,9 +679,14 @@ private StackPane crearSprite(Carta carta) {
                 visual.setStyle(visual.getStyle() + "-fx-border-color: #ffd166; -fx-border-width: 4;");
             }
             visual.setOnMouseClicked(event -> {
-                indiceManoSeleccionada = indice;
-                mostrarDetalle(carta);
-                refrescar();
+                if (event.getClickCount() == 2) {
+                    mostrarDatosCompletos(carta);
+                } else {
+                    indiceManoSeleccionada = indice;
+                    visual.setStyle(visual.getStyle()
+                            + "-fx-border-color: #ffd166; -fx-border-width: 4;");
+                    mostrarDetalle(carta);
+                }
             });
             mano.getChildren().add(visual);
         }
@@ -580,6 +702,35 @@ private StackPane crearSprite(Carta carta) {
                 + "-fx-border-color: #283044; -fx-border-width: 2; -fx-border-radius: 7;");
         if (carta == null) {
             visual.getChildren().add(new Label("Vacio"));
+            return visual;
+        }
+        java.net.URL recursoCarta = getClass().getResource("/imagenes/cartas/" + nombreArchivoCarta(carta));
+        if (recursoCarta != null) {
+            ImageView imagenCarta = new ImageView(new Image(recursoCarta.toExternalForm()));
+            imagenCarta.setFitWidth(ancho - 8);
+            imagenCarta.setFitHeight(alto - 8);
+            imagenCarta.setPreserveRatio(true);
+            StackPane cartaConEnergia = new StackPane(imagenCarta);
+            if (carta.esPokemon() && carta.getEnergias() > 0) {
+                HBox energias = new HBox(2);
+                energias.setPadding(new Insets(4));
+                for (int i = 0; i < carta.getEnergias(); i++) {
+                    energias.getChildren().add(crearIconoEnergia(20));
+                }
+                cartaConEnergia.getChildren().add(energias);
+                StackPane.setAlignment(energias, Pos.BOTTOM_RIGHT);
+            }
+            if (carta.estaFueraDeCombate()) {
+                java.net.URL recursoMuerto = getClass().getResource("/imagenes/Muerto.png");
+                if (recursoMuerto != null) {
+                    ImageView marcaMuerto = new ImageView(new Image(recursoMuerto.toExternalForm()));
+                    marcaMuerto.setFitWidth(ancho * 0.65);
+                    marcaMuerto.setFitHeight(alto * 0.65);
+                    marcaMuerto.setPreserveRatio(true);
+                    cartaConEnergia.getChildren().add(marcaMuerto);
+                }
+            }
+            visual.getChildren().add(cartaConEnergia);
             return visual;
         }
         Label nombre = new Label("Carta\n" + carta.getNombre());
@@ -601,7 +752,18 @@ private StackPane crearSprite(Carta carta) {
         return visual;
     }
 
-    private VBox crearAcciones() {
+    private String nombreArchivoCarta(Carta carta) {
+        return switch (carta.getNombre()) {
+            case "Ivysaur" -> "Carta Ivysaur.png";
+            case "Venusaur" -> "Carta Venasaur.png";
+            case "Blastoise" -> "Carta Blastois.png";
+            case "Oddish" -> "Carta Oddysh.png";
+            case "Clefairy" -> "Carta Clefayri.png";
+            default -> "Carta " + carta.getNombre() + ".png";
+        };
+    }
+
+    private StackPane crearAcciones() {
         Button energiaActivo = new Button("Energia al activo", crearIconoEnergia(24));
         Button energiaBanca1 = new Button("Energia a banca 1", crearIconoEnergia(24));
         Button energiaBanca2 = new Button("Energia a banca 2", crearIconoEnergia(24));
@@ -615,6 +777,7 @@ private StackPane crearSprite(Carta carta) {
         Button atacar = new Button("Atacar");
         Button terminar = new Button("Terminar turno");
         Button reiniciar = new Button("Nueva partida");
+        Button historial = new Button("Historial de partida");
 
         energiaActivo.setOnAction(event -> asignarEnergia(-1));
     energiaBanca1.setOnAction(event -> asignarEnergia(0));
@@ -626,6 +789,7 @@ private StackPane crearSprite(Carta carta) {
         atacar.setOnAction(event -> ejecutarAtaque());
         terminar.setOnAction(event -> terminarTurno());
         reiniciar.setOnAction(event -> mostrarConfiguracion());
+        historial.setOnAction(event -> mostrarHistorial());
 
     energiaVisual = new HBox(6);
     energiaVisual.setAlignment(Pos.CENTER);
@@ -646,17 +810,37 @@ private StackPane crearSprite(Carta carta) {
     botones.add(reiniciar, 0, 10);
 
     for (Button boton : new Button[] {energiaActivo, energiaBanca1, energiaBanca2,
-        energiaBanca3, jugar, evolucionar, retirar, atacar, terminar, reiniciar}) {
+        energiaBanca3, jugar, evolucionar, retirar, atacar, terminar, reiniciar, historial}) {
         boton.setMaxWidth(Double.MAX_VALUE);
     }
     GridPane.setHgrow(energiaActivo, Priority.ALWAYS);
 
-    VBox controles = new VBox(10, new Label("Acciones"), energiaVisual, botones);
+    Region espacioHistorial = new Region();
+    espacioHistorial.setPrefHeight(18);
+    VBox controles = new VBox(10, new Label("Acciones"), energiaVisual, botones, espacioHistorial, historial);
     controles.setAlignment(Pos.TOP_CENTER);
     controles.setPadding(new Insets(10));
-    controles.setPrefWidth(220);
-    controles.setStyle("-fx-background-color: #f4f1de; -fx-background-radius: 8;");
-    return controles;
+    controles.setPrefWidth(300);
+    return crearPanelPokedex(controles, "/imagenes/Pokedex-1.png");
+    }
+
+    private StackPane crearPanelPokedex(Region contenido, String ruta) {
+        StackPane panel = new StackPane();
+        java.net.URL recurso = getClass().getResource(ruta);
+        if (recurso != null) {
+            ImageView pokedex = new ImageView(new Image(recurso.toExternalForm()));
+            pokedex.setManaged(false);
+            pokedex.fitWidthProperty().bind(panel.widthProperty());
+            pokedex.fitHeightProperty().bind(panel.heightProperty());
+            pokedex.setPreserveRatio(false);
+            panel.getChildren().add(pokedex);
+        } else {
+            panel.setStyle("-fx-background-color: #f4f1de;");
+        }
+        contenido.setStyle("-fx-background-color: transparent;");
+        panel.getChildren().add(contenido);
+        StackPane.setAlignment(contenido, Pos.TOP_CENTER);
+        return panel;
     }
 
     private void actualizarEnergiaVisual() {
@@ -687,6 +871,7 @@ private StackPane crearSprite(Carta carta) {
     }
 
     private void asignarEnergia(int posicion) {
+        if (partidaTerminada) return;
         if (energiaDisponible <= 0 || !acciones.asignarEnergia(turno, posicion)) {
             estado.setText("No se puede asignar energia en ese espacio.");
             return;
@@ -697,6 +882,7 @@ private StackPane crearSprite(Carta carta) {
     }
 
     private void jugarPrimeraCarta() {
+        if (partidaTerminada) return;
         if (indiceManoSeleccionada < 0 || indiceManoSeleccionada >= turno.getTamanoMano()) {
             estado.setText("Selecciona una carta de tu mano primero.");
             return;
@@ -746,6 +932,7 @@ private StackPane crearSprite(Carta carta) {
     }
 
     private void evolucionarObjetivo() {
+        if (partidaTerminada) return;
         int posicion = posicionEvolucionSeleccionada();
         Carta objetivo = pokemonEnPosicion(posicion);
         if (objetivo == null) {
@@ -778,12 +965,14 @@ private StackPane crearSprite(Carta carta) {
     }
 
     private void ejecutarRetirada() {
+        if (partidaTerminada) return;
         if (acciones.retirar(turno, 0)) estado.setText("Retirada realizada.");
         else estado.setText("Necesitas banca y energia suficiente para retirarte.");
         refrescar();
     }
 
     private void ejecutarAtaque() {
+        if (partidaTerminada) return;
         Carta atacante = turno.getActivo();
         Carta objetivo = defensor.getActivo();
         if (ataqueUsado || atacante == null || objetivo == null) return;
@@ -797,14 +986,77 @@ private StackPane crearSprite(Carta carta) {
         mensajeAccion = acciones.getUltimoResumenAtaque();
         if (objetivo.estaFueraDeCombate()) {
             turno.sumarPunto();
-            defensor.sacarActivo();
-            prepararCampo(defensor, numeroTurno);
             mensajeAccion += " Punto para " + turno.getNombre() + ".";
+            refrescar();
+            mostrarNotificacionesEstado();
+            Platform.runLater(() -> resolverDerrotaVisual(defensor, turno));
+            return;
         }
+        refrescar();
+        mostrarNotificacionesEstado();
+    }
+
+    private void resolverDerrotaVisual(Jugador derrotado, Jugador ganador) {
+        Carta caido = derrotado.sacarActivo();
+        if (caido != null) derrotado.getDescarte().apilar(caido);
+        if (ganador.getPuntos() >= 3) {
+            finalizarPartida(ganador, "al conseguir tres puntos");
+            return;
+        }
+
+        List<String> opciones = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            Carta carta = derrotado.getPokemonBanca(i);
+            if (carta != null) opciones.add("Banca " + (i + 1) + ": " + carta.getNombre());
+        }
+        for (int i = 0; i < derrotado.getTamanoMano(); i++) {
+            Carta carta = derrotado.obtenerCartaDeMano(i);
+            if (carta != null && carta.esPokemon() && carta.getFase() == 1) {
+                opciones.add("Mano " + (i + 1) + ": " + carta.getNombre());
+            }
+        }
+
+        if (opciones.isEmpty()) {
+            if (derrotado.promoverBasicoDelMazo(numeroTurno)) {
+                mensajeAccion = derrotado.getNombre() + " puso un Pokemon basico del mazo como activo.";
+                refrescar();
+            } else {
+                finalizarPartida(ganador, derrotado.getNombre() + " no tiene Pokemon para reemplazar al activo");
+            }
+            return;
+        }
+
+        ChoiceDialog<String> dialogo = new ChoiceDialog<>(opciones.get(0), opciones);
+        dialogo.setTitle("Pokemon derrotado");
+        dialogo.setHeaderText(derrotado.getNombre() + ": elige un nuevo Pokemon activo.");
+        dialogo.setContentText("Reemplazo:");
+        String eleccion = dialogo.showAndWait().orElse(opciones.get(0));
+        boolean promovido;
+        if (eleccion.startsWith("Banca ")) {
+            int indice = Integer.parseInt(eleccion.substring(6, 7)) - 1;
+            promovido = derrotado.promoverDesdeBanca(indice);
+        } else {
+            int finIndice = eleccion.indexOf(':');
+            int indice = Integer.parseInt(eleccion.substring(5, finIndice)) - 1;
+            promovido = derrotado.promoverDesdeMano(indice, numeroTurno);
+        }
+        if (!promovido) {
+            finalizarPartida(ganador, derrotado.getNombre() + " no pudo reemplazar al activo");
+            return;
+        }
+        mensajeAccion = derrotado.getNombre() + " eligio un nuevo Pokemon activo.";
+        refrescar();
+    }
+
+    private void finalizarPartida(Jugador ganador, String razon) {
+        partidaTerminada = true;
+        mensajeAccion = "Fin de la partida: " + ganador.getNombre() + " gana " + razon + ".";
+        alerta(mensajeAccion);
         refrescar();
     }
 
     private void terminarTurno() {
+        if (partidaTerminada) return;
         Jugador temporal = turno;
         turno = defensor;
         defensor = temporal;
@@ -819,22 +1071,111 @@ private StackPane crearSprite(Carta carta) {
         mensajeAccion = (roboCarta ? "Robo una carta. " : "") + efectoEstado
             + (habilidades.isEmpty() ? "" : " " + habilidades + ".");
         refrescar();
+        mostrarNotificacionesEstado();
+    }
+
+    private void mostrarNotificacionesEstado() {
+        for (String notificacion : acciones.consumirNotificacionesEstado()) {
+            Alert alertaEstado = new Alert(Alert.AlertType.INFORMATION);
+            alertaEstado.setTitle("Estado alterado");
+            alertaEstado.setHeaderText("Un Pokemon recibio un estado alterado");
+            alertaEstado.setContentText(notificacion);
+            alertaEstado.showAndWait();
+        }
     }
 
     private void mostrarDetalle(Carta carta) {
         detalle.getChildren().clear();
-        detalle.getChildren().add(titulo("Detalle de carta"));
+        detalle.setAlignment(Pos.CENTER);
+        detalle.setFillWidth(false);
+        Label encabezado = titulo("Detalle de carta");
+        encabezado.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #111111;");
+        detalle.getChildren().add(encabezado);
         detalle.getChildren().addAll(new Label("Nombre: Carta " + carta.getNombre()),
                 new Label("Tipo: " + carta.getTipo()),
                 new Label("Vida: " + carta.getVida() + "/" + carta.getVidaMaxima()),
                 new Label("Ataque: " + carta.getAtaque()),
-                new Label("Dano: " + carta.getDanio()),
+                new Label("Daño: " + carta.getDanio()),
                 new Label("Ataque elemental: " + (carta.tieneAtaqueElemental() ? "si" : "no")),
+                new Label("Tiene habilidad: " + (carta.getHabilidad() == null ? "No" : "Si")),
+                new Label("Efecto de habilidad: " + descripcionHabilidad(carta)),
                 new Label("Energia actual: " + carta.getEnergias()),
                 new Label("Energia para atacar: " + carta.getFase()),
                 new Label("Costo de retirada: " + carta.getFase()),
                 new Label("Estado: " + carta.getEstado()));
     }
+
+    private String descripcionHabilidad(Carta carta) {
+        if (carta.getHabilidad() == null) return "No tiene habilidad.";
+        return switch (carta.getNombre()) {
+            case "Venusaur" -> "Al iniciar el turno cura 10 de vida.";
+            case "Vileplume" -> "Al iniciar el turno aplica Veneno al activo rival.";
+            case "Clefairy" -> "Al iniciar el turno cura 10 de vida y elimina su estado.";
+            case "Charizard" -> "Sus ataques hacen 10 de daño adicional.";
+            case "Blastoise" -> "Con al menos una energia, sus ataques hacen 10 de daño adicional.";
+            case "Pikachu" -> "Tiene 50% de probabilidad de hacer 10 de daño adicional.";
+            case "Raichu" -> "Sus ataques hacen 15 de daño adicional.";
+            case "Gyarados" -> "Con vida a la mitad o menos, sus ataques hacen 15 de daño adicional.";
+            default -> carta.getHabilidad();
+        };
+    }
+
+    private void mostrarDatosCompletos(Carta carta) {
+        VBox contenido = new VBox(7);
+        contenido.setPadding(new Insets(8));
+        contenido.getChildren().addAll(
+                new Label("Nombre: " + carta.getNombre()),
+                new Label("Clase: " + carta.getTipoCarta()),
+                new Label("Tipo: " + carta.getTipo()));
+
+        if (carta.esPokemon()) {
+            contenido.getChildren().addAll(
+                    new Label("Fase: " + carta.getFase()),
+                    new Label("Vida: " + carta.getVida() + "/" + carta.getVidaMaxima()),
+                    new Label("Ataque: " + carta.getAtaque()),
+                    new Label("Daño base: " + carta.getDanio()),
+                    new Label("Ataque elemental: " + (carta.tieneAtaqueElemental() ? "Si" : "No")),
+                    new Label("Tiene habilidad: " + (carta.getHabilidad() == null ? "No" : "Si")),
+                    new Label("Efecto de habilidad: " + descripcionHabilidad(carta)),
+                    new Label("Energias asignadas: " + carta.getEnergias()),
+                    new Label("Estado: " + carta.getEstado()),
+                    new Label("Turno de entrada: " + carta.getTurnoEntrada()),
+                    new Label("Turno de evolucion: " + carta.getTurnoEvolucion()));
+        } else {
+            contenido.getChildren().add(new Label("Efecto: " + descripcionObjeto(carta)));
+        }
+
+        Alert ventana = new Alert(Alert.AlertType.INFORMATION);
+        ventana.setTitle("Datos completos de la carta");
+        ventana.setHeaderText(carta.getNombre());
+        ventana.getDialogPane().setContent(contenido);
+        ventana.showAndWait();
+    }
+
+    private String descripcionObjeto(Carta carta) {
+        return switch (carta.getNombre()) {
+            case "Pocion" -> "Cura 20 puntos de vida al Pokemon activo.";
+            case "Superpocion" -> "Cura 40 puntos de vida y puede retirar una energia.";
+            case "Pokeball" -> "Busca un Pokemon basico en el mazo.";
+            case "Caramelo Raro" -> "Permite evolucionar sin esperar un turno.";
+            default -> "Objeto especial.";
+        };
+    }
+
+        private void mostrarHistorial() {
+        List<String> eventos = acciones.historial().obtenerElementos();
+        TextArea resumen = new TextArea(eventos.isEmpty()
+            ? "Aun no hay jugadas registradas."
+            : String.join(System.lineSeparator(), eventos));
+        resumen.setEditable(false);
+        resumen.setWrapText(true);
+        resumen.setPrefSize(520, 360);
+        Alert ventana = new Alert(Alert.AlertType.INFORMATION);
+        ventana.setTitle("Historial de partida");
+        ventana.setHeaderText("Resumen de jugadas");
+        ventana.getDialogPane().setContent(resumen);
+        ventana.showAndWait();
+        }
 
     private Label titulo(String texto) {
         Label label = new Label(texto);
