@@ -102,7 +102,7 @@ public class VistaJuego {
     private VBox crearEditorMazo(String encabezado, List<String> mazo) {
         ComboBox<String> selector = new ComboBox<>();
         List<String> opciones = new ArrayList<>(catalogo.keySet());
-        Collections.sort(opciones);
+        ordenarNombresPorInsercion(opciones);
         opciones.addAll(List.of("Pocion", "Superpocion", "Pokeball", "Caramelo Raro"));
         selector.getItems().addAll(opciones);
         selector.getSelectionModel().selectFirst();
@@ -138,6 +138,18 @@ public class VistaJuego {
         VBox editor = new VBox(8, tituloMazo, selector, new HBox(6, agregar, quitar, base), lista);
         editor.setPrefWidth(500);
         return editor;
+    }
+
+    private void ordenarNombresPorInsercion(List<String> nombres) {
+        for (int indiceActual = 1; indiceActual < nombres.size(); indiceActual++) {
+            String nombreActual = nombres.get(indiceActual);
+            int indiceAnterior = indiceActual - 1;
+            while (indiceAnterior >= 0 && nombres.get(indiceAnterior).compareTo(nombreActual) > 0) {
+                nombres.set(indiceAnterior + 1, nombres.get(indiceAnterior));
+                indiceAnterior--;
+            }
+            nombres.set(indiceAnterior + 1, nombreActual);
+        }
     }
 
     private void actualizarTituloEditor(VBox editor, String texto) {
